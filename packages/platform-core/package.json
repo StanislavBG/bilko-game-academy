@@ -1,0 +1,27 @@
+{
+  "name": "@bilko/platform-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./save": "./src/save/index.ts",
+    "./settings": "./src/settings/index.ts",
+    "./leaderboards": "./src/leaderboards/index.ts",
+    "./locales": "./src/locales/en.json"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bilko/game-sdk": "workspace:*",
+    "idb-keyval": "^6.2.1",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

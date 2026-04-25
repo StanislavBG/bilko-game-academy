@@ -1,0 +1,112 @@
+{
+  "twoWay": [
+    {
+      "id": "electrocute",
+      "label": "Electrocute!",
+      "color": "#8ae8ff",
+      "requires": ["wet", "shock"],
+      "consumes": ["wet"],
+      "effect": { "kind": "lightning-multiplier", "multiplier": 4.0, "stunMs": 800 }
+    },
+    {
+      "id": "steam",
+      "label": "Steam!",
+      "color": "#cfd8dc",
+      "requires": ["wet", "burn"],
+      "consumes": ["wet", "burn"],
+      "effect": { "kind": "aoe", "radius": 80, "damage": 3, "slowMs": 2000, "slowFactor": 0.7 }
+    },
+    {
+      "id": "deep-freeze",
+      "label": "Deep Freeze!",
+      "color": "#b0e0ff",
+      "requires": ["wet", "freeze"],
+      "consumes": [],
+      "effect": { "kind": "extend-freeze", "multiplier": 1.5 }
+    },
+    {
+      "id": "toxic-combustion",
+      "label": "Toxic Combustion!",
+      "color": "#7dff5a",
+      "requires": ["burn", "poison"],
+      "consumes": [],
+      "effect": { "kind": "intensify-dot", "multiplier": 2.0 }
+    },
+    {
+      "id": "thermal-shock",
+      "label": "Thermal Shock!",
+      "color": "#ff9b3a",
+      "requires": ["burn", "freeze"],
+      "consumes": ["burn", "freeze"],
+      "effect": { "kind": "burst", "damage": 8 }
+    },
+    {
+      "id": "shatter",
+      "label": "Shatter!",
+      "color": "#e0f7ff",
+      "requires": ["freeze", "shock"],
+      "consumes": ["freeze", "shock"],
+      "effect": { "kind": "next-hit-multiplier", "multiplier": 3.0, "bypassArmor": true }
+    },
+    {
+      "id": "plasma",
+      "label": "Plasma!",
+      "color": "#ff5ab0",
+      "requires": ["burn", "shock"],
+      "consumes": ["burn", "shock"],
+      "effect": { "kind": "aoe", "radius": 60, "damage": 6, "stunMs": 500 }
+    },
+    {
+      "id": "convulsion",
+      "label": "Convulsion!",
+      "color": "#c88aff",
+      "requires": ["poison", "shock"],
+      "consumes": ["shock"],
+      "effect": { "kind": "stun-per-tick", "stunMs": 100 }
+    },
+    {
+      "id": "crystal-venom",
+      "label": "Crystal Venom!",
+      "color": "#66ffcc",
+      "requires": ["poison", "freeze"],
+      "consumes": ["freeze"],
+      "effect": { "kind": "extend-freeze", "multiplier": 1.0, "addMs": 1000, "applyPoisonOnThaw": true }
+    },
+    {
+      "id": "acid-rain",
+      "label": "Acid Rain!",
+      "color": "#8aff3a",
+      "requires": ["poison", "wet"],
+      "consumes": ["wet"],
+      "effect": { "kind": "spread-poison", "targets": 3, "radius": 100 }
+    }
+  ],
+  "threeWay": [
+    {
+      "id": "cataclysm",
+      "label": "CATACLYSM!!",
+      "color": "#ffffff",
+      "requires": ["wet", "shock", "freeze"],
+      "consumes": ["wet", "shock", "freeze"],
+      "effect": { "kind": "screen-clear", "damage": 20, "freezeMs": 1000 }
+    },
+    {
+      "id": "supernova",
+      "label": "SUPERNOVA!!",
+      "color": "#ffd85a",
+      "requires": ["burn", "poison", "shock"],
+      "consumes": ["burn", "poison", "shock"],
+      "effect": { "kind": "aoe", "radius": 200, "damage": 25, "reapplyAll": true }
+    },
+    {
+      "id": "ice-storm",
+      "label": "ICE STORM!!",
+      "color": "#a8e0ff",
+      "requires": ["burn", "freeze", "wet"],
+      "consumes": ["burn", "freeze", "wet"],
+      "effect": { "kind": "frost-zone", "radius": 150, "dps": 3, "durationMs": 5000, "freezePerTickMs": 500 }
+    }
+  ],
+  "bossDamageScale": 0.2,
+  "perEnemyCooldownMs": 1000
+}

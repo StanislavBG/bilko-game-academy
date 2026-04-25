@@ -1,0 +1,33 @@
+node_modules/
+dist/
+build/
+.cache/
+.turbo/
+*.tsbuildinfo
+
+# PWA generated
+dev-dist/
+sw.js
+sw.js.map
+workbox-*.js
+workbox-*.js.map
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Asset pipeline intermediates
+tools/atlas-build/_out/
+apps/games/*/assets/_generated/
