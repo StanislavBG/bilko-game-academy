@@ -26,7 +26,7 @@ export function PageShell({
   body,
 }: Props): JSX.Element {
   return (
-    <div className="flex flex-col h-screen bg-sea-800 text-sea-50">
+    <div className="flex flex-col h-full bg-sea-800 text-sea-50">
       <header className="px-4 py-3 border-b border-sea-700 bg-sea-900 flex items-center gap-4">
         <Link to="/" className="text-sea-300 hover:text-gold-400 text-sm">
           ← Shell
