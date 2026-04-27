@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@bilko/boat-shooter": "workspace:*",
+    "@bilko/boat-shooter-content": "workspace:*",
+    "@bilko/boat-shooter-schema": "workspace:*",
     "@bilko/game-sdk": "workspace:*",
     "@bilko/platform-core": "workspace:*",
     "react": "^18.3.1",

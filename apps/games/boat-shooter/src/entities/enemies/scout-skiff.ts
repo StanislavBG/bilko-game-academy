@@ -1,7 +1,8 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { arrowSpread, leadAimAngle } from '../../systems/firing-patterns';
 import { chargeUp } from '../../systems/enemy-attack-fx';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * N1 Scout Skiff — Raptor-style fodder.
@@ -10,21 +11,6 @@ import { chargeUp } from '../../systems/enemy-attack-fx';
  * sway, fires aimed musket shots at the player, and exits the bottom.
  * Does NOT chase — the player dodges bullet patterns, not melee.
  */
-export const SCOUT_SKIFF_SPEC: EnemySpec = {
-  id: 'scout-skiff',
-  maxHp: 1,
-  armor: 0,
-  speed: 150,
-  contactDamage: 1,
-  collisionRadius: 26,
-  // Scouts are fodder — drop 2 XP orbs each so early leveling feels fast.
-  drops: { coinsSmall: 0, coinsMedium: 1, coinsLarge: 0, gemChance: 0, xpOrbs: 2 },
-  color: 0xc85a2e,
-  visualRadius: 22,
-  element: 'physical',
-  showAimReticle: false, // fodder — per §6.1 fodder stays tell-only
-  deathStyle: 'pop',     // small splinter pop — matches fodder weight
-};
 
 export class ScoutSkiff extends Enemy {
   private swayPhase = Math.random() * Math.PI * 2;
@@ -39,7 +25,7 @@ export class ScoutSkiff extends Enemy {
   private pendingFireCancel: (() => void) | null = null;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, SCOUT_SKIFF_SPEC, x, y);
+    super(scene, getEnemySpec('scout-skiff'), x, y);
     this.homeX = x;
   }
 

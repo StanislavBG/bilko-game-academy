@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@bilko/boat-shooter-content": "workspace:*",
+    "@bilko/boat-shooter-schema": "workspace:*",
     "@bilko/game-sdk": "workspace:*",
     "phaser": "^3.80.1"
   },

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { GameContext } from '@bilko/game-sdk';
 import { RunState } from '../run-state';
 import { stageById } from '../data/stages';
-import { SHIP_CONFIGS, type ShipElement } from '../data/starting-ships';
+import { getShipConfig, type ShipElement } from '../data/starting-ships';
 import { WEAPON_DEFS } from '../weapons/weapon-catalog';
 import { PASSIVE_DEFS } from '../weapons/passive-catalog';
 import type { CombatLog, CombatLogEntry } from '../systems/combat-log';
@@ -55,7 +55,7 @@ export class RunSummaryScene extends Phaser.Scene {
     const H = this.scale.height;
     const rs = this.data_.runState;
     const stageSpec = stageById(this.data_.stageId);
-    const ship = SHIP_CONFIGS[rs.shipId];
+    const ship = getShipConfig(rs.shipId);
     const accent = this.data_.accentColor ?? 0xc79448;
 
     const reducedMotion = this.isReducedMotion();

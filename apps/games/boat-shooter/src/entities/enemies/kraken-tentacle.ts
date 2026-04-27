@@ -1,22 +1,11 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * S3 Kraken Tentacle — periodic hazard. Telegraph 2s, then a 3s sweep arc,
  * then retreats. Kill while exposed for loot.
  */
-export const KRAKEN_TENTACLE_SPEC: EnemySpec = {
-  id: 'kraken-tentacle',
-  maxHp: 20,
-  armor: 3,
-  speed: 0,
-  contactDamage: 5,
-  collisionRadius: 36,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 1, gemChance: 0.2, xpOrbs: 2 },
-  color: 0x5a2a8a,
-  visualRadius: 34,
-  deathStyle: 'splash', // tentacle whips back into the water with a splash ring
-};
 
 type TentacleState = 'telegraph' | 'exposed' | 'sweep' | 'retreating';
 
@@ -30,7 +19,7 @@ export class KrakenTentacle extends Enemy {
   private sweepPhase = 0;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, KRAKEN_TENTACLE_SPEC, x, y);
+    super(scene, getEnemySpec('kraken-tentacle'), x, y);
     this.sweepCenterX = x;
     this.sweepCenterY = y;
     this.stateUntilMs = scene.time.now + 2000;

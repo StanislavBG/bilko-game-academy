@@ -1,21 +1,11 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * Env2 Mine-Layer — drops persistent sea mines in the player's path.
  * Flees upstream (toward player's downstream = up the screen) if engaged.
  */
-export const MINE_LAYER_SPEC: EnemySpec = {
-  id: 'mine-layer',
-  maxHp: 5,
-  armor: 1,
-  speed: 80,
-  contactDamage: 1,
-  collisionRadius: 26,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 0, gemChance: 0.03, xpOrbs: 1 },
-  color: 0x3a3a3a,
-  visualRadius: 24,
-};
 
 interface LayerMine {
   sprite: Phaser.GameObjects.Arc;
@@ -30,7 +20,7 @@ export class MineLayer extends Enemy {
   private mines: LayerMine[] = [];
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, MINE_LAYER_SPEC, x, y);
+    super(scene, getEnemySpec('mine-layer'), x, y);
   }
 
   protected override drawVisual(): void {

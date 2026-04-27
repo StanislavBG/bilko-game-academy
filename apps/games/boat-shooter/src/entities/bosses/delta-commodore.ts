@@ -1,9 +1,10 @@
 import { ShipwrightChest } from '../../systems/evolution-chest';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
 import { fanSpread, leadAimAngle, spiralShot } from '../../systems/firing-patterns';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * B1 The Delta Commodore — Fleet Formation mechanic.
@@ -12,17 +13,6 @@ import { fanSpread, leadAimAngle, spiralShot } from '../../systems/firing-patter
  *   P2: escorts dead, full damage, summons + mortar barrage.
  *   P3: enrage; final reinforcement wave.
  */
-export const DELTA_COMMODORE_SPEC: EnemySpec = {
-  id: 'delta-commodore',
-  maxHp: 200,
-  armor: 4,
-  speed: 90,
-  contactDamage: 5,
-  collisionRadius: 70,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 12, gemChance: 1.0, xpOrbs: 5 },
-  color: 0x1a2a4a,
-  visualRadius: 66,
-};
 
 export class DeltaCommodore extends Enemy {
   private phase: 1 | 2 | 3 = 1;
@@ -35,7 +25,7 @@ export class DeltaCommodore extends Enemy {
   private anchorDir: 1 | -1 = 1;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, DELTA_COMMODORE_SPEC, x, y);
+    super(scene, getEnemySpec('delta-commodore'), x, y);
     this.banner = new BossBanner(scene, "HMS Ironclad Majesty — Delta Commodore", () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase("Phase 1: The Fleet");
     this.banner.redraw();

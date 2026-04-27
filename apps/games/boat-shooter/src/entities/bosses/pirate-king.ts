@@ -1,9 +1,10 @@
 import { ShipwrightChest } from '../../systems/evolution-chest';
 import Phaser from 'phaser';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * B2 Pirate King "Admiral Scurvy" — Crimson Maw. Act I finale.
@@ -12,17 +13,6 @@ import { WORLD_WIDTH } from '../../constants';
  * boarders at the deck. P1 version handled abstractly: 6 Grappling Boarders
  * spawn at once in the arena (the camera-zoom UI is P3 polish).
  */
-export const PIRATE_KING_SPEC: EnemySpec = {
-  id: 'pirate-king',
-  maxHp: 220,
-  armor: 4,
-  speed: 100,
-  contactDamage: 5,
-  collisionRadius: 70,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 14, gemChance: 1.0, xpOrbs: 6 },
-  color: 0x6a0a0a,
-  visualRadius: 66,
-};
 
 export class PirateKing extends Enemy {
   private phase: 1 | 2 | 3 = 1;
@@ -34,7 +24,7 @@ export class PirateKing extends Enemy {
   private boardingTriggerHp = [100, 60];
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, PIRATE_KING_SPEC, x, y);
+    super(scene, getEnemySpec('pirate-king'), x, y);
     this.banner = new BossBanner(scene, "Crimson Maw — Admiral Scurvy", () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase("Phase 1: Red Sails");
     this.banner.redraw();

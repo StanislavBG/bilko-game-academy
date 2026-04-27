@@ -1,4 +1,6 @@
 import type { StageScene } from '../scenes/stage-scene';
+import type { SpriteManifestEntry } from '@bilko/boat-shooter-schema';
+import { getActivePack } from '../content/active-pack';
 
 /**
  * Sprite loader + chroma-key pipeline.
@@ -8,8 +10,12 @@ import type { StageScene } from '../scenes/stage-scene';
  * so we post-process each texture after load: convert near-black pixels to
  * transparent.
  *
- * The manifest is the single source of truth for which sprites exist + their
- * in-game sprite keys.
+ * The manifest lives in the active ContentPack (bundled defaults overlaid
+ * with the content server's response at boot). When `opts.serverUrl` is
+ * supplied to `preloadSprites`, individual sprite URLs flip from the
+ * bundled `${BASE_URL}boat-shooter-sprites/<id>.png` to the server's
+ * `${serverUrl}/v1/sprite/<id>.png` — chroma-key + fallback handling are
+ * unchanged.
  */
 
 // Vite rewrites `import.meta.env.BASE_URL` at build time to whatever
@@ -19,114 +25,58 @@ import type { StageScene } from '../scenes/stage-scene';
 // transform runs anyway.
 const BASE_URL =
   (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/';
-const SPRITE_BASE = `${BASE_URL}boat-shooter-sprites/`;
+const BUNDLED_SPRITE_BASE = `${BASE_URL}boat-shooter-sprites/`;
 
 export interface SpriteDef {
   key: string;
   url: string;
 }
 
-/**
- * Core sprites — always expected to be on disk. Missing files log an error
- * (visible in console) but the game survives via each subsystem's fallback.
- */
-const CORE_SPRITE_IDS: readonly string[] = [
-  'player',
-  'scout-skiff', 'patrol-gunboat', 'ramming-brigand', 'mortar-barge',
-  'bank-sniper-tower', 'broadside-cutter', 'grappling-boarders',
-  'powder-keg-kamikaze', 'ghost-ship', 'sea-serpent', 'kraken-tentacle',
-  'cursed-swarm', 'bank-bandits', 'mine-layer',
-  'frigate-captain', 'pirate-champion', 'banshee-galleon',
-  'delta-commodore', 'pirate-king', 'ghost-commodore', 'drowned-admiralty',
-  'obsidian-warlord', 'kraken-ancient',
-  'coin-small', 'coin-medium', 'coin-large', 'gem', 'xp-orb',
-  'chest-wooden', 'chest-silver', 'chest-gold', 'chest-cursed', 'chest-shipwright',
-];
+export interface PreloadSpritesOpts {
+  /** When set, sprites load from `${serverUrl}/v1/sprite/<id>.png`. */
+  serverUrl?: string;
+}
 
-/**
- * Optional sprites — loaded opportunistically (plan doc §5 Batches C/D/E/F).
- * If a PNG doesn't exist yet, the loader silently removes the key and the
- * entity system falls back to its procedural draw.
- *
- * Sprite keys use the `sprite-<id>` convention; PNG filenames use `<id>.png`.
- */
-const PROJECTILE_IDS: readonly string[] = [
-  'proj-cannonball', 'proj-broadside-shell', 'proj-harpoon',
-  'proj-musket-ball', 'proj-lightning-orb', 'proj-frost-mortar',
-  'proj-ember-mortar', 'proj-ghost-bolt',
-];
+// Set once at boot in index.ts; sprite-loader callers (StageScene.preload)
+// don't take the boot's env reader as a dependency, so we cache it here.
+let CACHED_SERVER_URL: string | undefined;
+export function setSpriteServerUrl(url: string | undefined): void {
+  CACHED_SERVER_URL = url && url.length > 0 ? url : undefined;
+}
 
-const SCENERY_IDS: readonly string[] = [
-  'scenery-reed-clump', 'scenery-grass-tuft', 'scenery-river-log',
-  'scenery-mud-bar', 'scenery-stone-marker', 'scenery-mangrove-bank',
-  'scenery-mangrove-root', 'scenery-dock-plank', 'scenery-debris-crate',
-  'scenery-fleet-silhouette', 'scenery-blockade-line', 'scenery-wreckage',
-];
+function urlFor(entryId: string, serverUrl: string | undefined): string {
+  if (serverUrl && serverUrl.length > 0) {
+    return `${serverUrl.replace(/\/$/, '')}/v1/sprite/${entryId}.png`;
+  }
+  return `${BUNDLED_SPRITE_BASE}${entryId}.png`;
+}
 
-const HAZARD_IDS: readonly string[] = [
-  'hazard-rock-small', 'hazard-rock-large', 'hazard-barrel',
-  'hazard-ice-patch', 'hazard-oil-slick', 'hazard-mine',
-];
-
-/**
- * Enemy bullet sprites — one per damage family per the arcade-asset pass
- * (docs/games/boat-shooter/27-arcade-asset-research.md §4). Each enemy that
- * spawns a bullet through `spawnEnemyBullet` can pass a `bulletKind` which
- * maps to `sprite-bullet-<kind>`. A tinted-circle fallback is used if the
- * PNG is missing, so runs never break.
- */
-const BULLET_IDS: readonly string[] = [
-  'bullet-musket', 'bullet-cannon', 'bullet-sniper', 'bullet-shadow',
-  'bullet-venom', 'bullet-fire', 'bullet-frost', 'bullet-storm',
-];
-
-const ICON_IDS: readonly string[] = [
-  // Weapons (13)
-  'icon-bow-cannon', 'icon-broadside', 'icon-harpoon', 'icon-chain-lightning',
-  'icon-flamethrower', 'icon-lighthouse-beam', 'icon-mortar',
-  'icon-fire-arrow-rain', 'icon-kraken-ink', 'icon-spinning-axes',
-  'icon-homing-musket', 'icon-stern-mines', 'icon-ghost-crew',
-  // Passives (8)
-  'icon-crows-nest', 'icon-copper-hull', 'icon-storm-compass',
-  'icon-powder-barrel', 'icon-first-mate', 'icon-cargo-nets',
-  'icon-spyglass', 'icon-admirals-flag',
-];
-
-export const SPRITES: readonly SpriteDef[] = CORE_SPRITE_IDS.map((id) => ({
-  key: `sprite-${id}`,
-  url: `${SPRITE_BASE}${id}.png`,
-}));
-
-/** Optional sprite keys that tolerate missing files (plan §5 batches C–F + doc 27 bullets). */
-const OPTIONAL_SPRITE_IDS: readonly string[] = [
-  ...PROJECTILE_IDS,
-  ...SCENERY_IDS,
-  ...HAZARD_IDS,
-  ...ICON_IDS,
-  ...BULLET_IDS,
-];
-
-const OPTIONAL_SPRITES: readonly SpriteDef[] = OPTIONAL_SPRITE_IDS.map((id) => ({
-  key: `sprite-${id}`,
-  url: `${SPRITE_BASE}${id}.png`,
-}));
+const toSpriteDef = (e: SpriteManifestEntry, serverUrl: string | undefined): SpriteDef => ({
+  key: `sprite-${e.id}`,
+  url: urlFor(e.id, serverUrl),
+});
 
 /** Preload all sprites in one call from a scene's preload(). */
-export function preloadSprites(scene: StageScene): void {
-  for (const s of SPRITES) {
+export function preloadSprites(scene: StageScene, opts: PreloadSpritesOpts = {}): void {
+  const entries = getActivePack().sprites.entries;
+  const required = entries.filter((e) => e.required);
+  const optional = entries.filter((e) => !e.required);
+
+  const serverUrl = opts.serverUrl ?? CACHED_SERVER_URL;
+  const requiredDefs = required.map((e) => toSpriteDef(e, serverUrl));
+  const optionalDefs = optional.map((e) => toSpriteDef(e, serverUrl));
+  // O(n) lookup via Set so the loaderror handler knows which missing
+  // files are non-fatal and should be silently dropped.
+  const optionalKeys = new Set(optionalDefs.map((s) => s.key));
+
+  for (const s of requiredDefs) {
     scene.load.image(s.key, s.url);
   }
-  // Opportunistic per-ship regenerated variants — if `tools/generate-sprites.mjs`
-  // produced a themed PNG for a ship, the loader uses it directly and the
-  // compositor's fallback bake is skipped (see ship-compositor.ts).
-  const shipIds = ['ember-corsair', 'tempest-fury', 'frostbound', 'verdant-tide', 'nightwake'];
-  for (const id of shipIds) {
-    scene.load.image(`sprite-player-${id}`, `${SPRITE_BASE}player-${id}.png`);
-  }
-  // Optional AI-generated sprite batches (plan §5 C–F). Each entity system
-  // prefers its sprite when `hasSprite(...)` is true and falls back to the
-  // procedural draw otherwise, so a missing PNG is a non-fatal condition.
-  for (const s of OPTIONAL_SPRITES) {
+  // Optional AI-generated sprite batches (plan §5 C–F + per-ship variants +
+  // PRD 4 enemies + bullet families). Each entity system prefers its sprite
+  // when `hasSprite(...)` is true and falls back to the procedural draw
+  // otherwise, so a missing PNG is a non-fatal condition.
+  for (const s of optionalDefs) {
     scene.load.image(s.key, s.url);
   }
   // Phaser emits `filecomplete` (key, type, data) for every asset; filter to
@@ -137,19 +87,11 @@ export function preloadSprites(scene: StageScene): void {
     if (!key.startsWith('sprite-')) return;
     chromaKeyBlackToTransparent(scene, key);
   });
-  // Per-ship variants + optional Batch C/D/E/F sprites are optional; if a file
-  // is missing Phaser emits `loaderror` — swallow those so the run continues
-  // with the procedural fallback, and don't spam the console.
-  const optionalPrefixes = [
-    'sprite-player-',
-    'sprite-proj-',
-    'sprite-scenery-',
-    'sprite-hazard-',
-    'sprite-icon-',
-    'sprite-bullet-',
-  ];
+  // If an optional file is missing Phaser emits `loaderror` — swallow those
+  // so the run continues with the procedural fallback, and don't spam the
+  // console.
   scene.load.on('loaderror', (file: { key: string }) => {
-    if (optionalPrefixes.some((p) => file.key.startsWith(p))) {
+    if (optionalKeys.has(file.key)) {
       scene.textures.remove(file.key);
     }
   });
@@ -182,6 +124,7 @@ function chromaKeyBlackToTransparent(scene: StageScene, key: string): void {
   ctx.drawImage(src as CanvasImageSource, 0, 0);
   const img = ctx.getImageData(0, 0, w, h);
   const d = img.data;
+  // Pass 1: knock dark pixels (the black background) to transparent.
   for (let i = 0; i < d.length; i += 4) {
     const r = d[i] ?? 0;
     const g = d[i + 1] ?? 0;
@@ -193,6 +136,34 @@ function chromaKeyBlackToTransparent(scene: StageScene, key: string): void {
       // Edge anti-alias zone — scale alpha with brightness.
       const a = d[i + 3] ?? 255;
       d[i + 3] = Math.floor(a * ((brightness - 24) / 56));
+    }
+  }
+  // Pass 2 (PRD 1) — anti-fringe on WHITE outline pixels. Painterly
+  // sprites often have very-bright (R+G+B > 700) edge highlights that
+  // survive Pass 1 and read as a white halo. If such a pixel sits next
+  // to a now-transparent neighbor, attenuate its alpha to 0.4× so the
+  // halo softens. Cost: 1 extra pass per loaded sprite at boot, O(w*h).
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const r = d[i] ?? 0;
+      const g = d[i + 1] ?? 0;
+      const b = d[i + 2] ?? 0;
+      const a = d[i + 3] ?? 0;
+      if (a < 255) continue;
+      if (r + g + b < 700) continue;
+      // Bright pixel — check if any neighbor is now transparent.
+      let touchesAlpha0 = false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        const nAlpha = d[(ny * w + nx) * 4 + 3] ?? 0;
+        if (nAlpha === 0) { touchesAlpha0 = true; break; }
+      }
+      if (touchesAlpha0) {
+        d[i + 3] = Math.floor(a * 0.4);
+      }
     }
   }
   ctx.putImageData(img, 0, 0);

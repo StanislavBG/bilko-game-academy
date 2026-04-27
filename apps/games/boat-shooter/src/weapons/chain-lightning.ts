@@ -45,7 +45,8 @@ export class ChainLightning extends Weapon {
     stunMs: number;
   } {
     switch (lvl) {
-      case 1: return { chains: 1, intervalMs: 2500, dmg: 2, chainRange: 150, stunMs: 0 };
+      // PRD 7 buff: 2500→2000ms (1.25× rate) since the elemental is now the only starter weapon.
+      case 1: return { chains: 1, intervalMs: 2000, dmg: 2, chainRange: 150, stunMs: 0 };
       case 2: return { chains: 2, intervalMs: 2000, dmg: 2, chainRange: 150, stunMs: 0 };
       case 3: return { chains: 3, intervalMs: 2000, dmg: 3, chainRange: 150, stunMs: 0 };
       case 4: return { chains: 4, intervalMs: 1500, dmg: 3, chainRange: 150, stunMs: 300 };

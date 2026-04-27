@@ -489,6 +489,12 @@ export abstract class Enemy {
     if (Math.random() < d.gemChance) this.scene.pickups.spawnGem(this.x, this.y);
     this.scene.pickups.spawnXpOrbs(this.x, this.y, d.xpOrbs);
 
+    // PRD 9 — boss-tier kills (mini-boss + full boss) auto-collect every
+    // pickup currently on the map so the player never has to chase loot.
+    if (this.spec.maxHp >= 60) {
+      this.scene.pickups.pullAllToPlayer();
+    }
+
     // Death-by-element switch (§6.3). Each branch plays an element-flavored
     // impact burst; 'physical' falls through to the existing splinter-pop
     // explosion() above. All branches skip extra work under reduced-motion.

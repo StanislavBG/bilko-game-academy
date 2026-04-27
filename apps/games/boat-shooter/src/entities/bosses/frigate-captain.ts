@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { WORLD_WIDTH } from '../../constants';
 import { ShipwrightChest } from '../../systems/evolution-chest';
-import { fanSpread, radialBurst, leadAimAngle } from '../../systems/firing-patterns';
+import { fanSpread, leadAimAngle, parametricSpiral, fireFromPoints } from '../../systems/firing-patterns';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * N5 Frigate Captain — "HMS Thunderstrike" — Act I mini-boss.
@@ -24,25 +25,19 @@ import { fanSpread, radialBurst, leadAimAngle } from '../../systems/firing-patte
  * it requires an AoE system that other bosses (Obsidian Warlord, etc.)
  * also use. A placeholder simple fire pattern fills in.
  */
-export const FRIGATE_CAPTAIN_SPEC: EnemySpec = {
-  id: 'frigate-captain',
-  // First-boss HP reduced 60 → 40 so Stage 1 is winnable with a L3-L4
-  // build. Armor stays at 3 so crit builds still feel distinct.
-  maxHp: 40,
-  armor: 3,
-  speed: 80,
-  contactDamage: 3,
-  collisionRadius: 60,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 6, gemChance: 1.0, xpOrbs: 4 },
-  color: 0x4a3a28,
-  visualRadius: 55,
-};
-
 type BossPhase = 1 | 2;
 
 export class FrigateCaptain extends Enemy {
   private phase: BossPhase = 1;
-  private broadsideTimerMs = 3000;
+  // PRD 1 — five attacks rotating on independent timers, originating
+  // from distinct weapon points on the boss sprite. P1 has 3, P2 adds
+  // 2 more (spinning spiral + split-aim wedge).
+  private salvoCrossTimerMs = 2400;   // P1 — port + starboard fans
+  private bowVolleyTimerMs = 4000;    // P1 — 3-bullet bow arrow
+  private sternMortarTimerMs = 6000;  // P1 — single arcing shot from stern
+  private spinningSpiralTimerMs = 3500; // P2 only — 4-armed spiral
+  private splitWedgeTimerMs = 2000;   // P2 only — twin-wedge ±25° around player
+  private spiralPhase = 0;
   private flareTimerMs = 8000;
 
   // Anchor behaviour: the frigate drifts slowly left-right across the top
@@ -56,7 +51,7 @@ export class FrigateCaptain extends Enemy {
   private hpBarFill!: Phaser.GameObjects.Graphics;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, FRIGATE_CAPTAIN_SPEC, x, y);
+    super(scene, getEnemySpec('frigate-captain'), x, y);
     this.buildBossBanner();
   }
 
@@ -131,16 +126,19 @@ export class FrigateCaptain extends Enemy {
   }
 
   private onPhase2(): void {
-    // Tighter cannon cadence + visual tilt.
-    this.broadsideTimerMs = 1500;
-    this.container.setRotation(0.12); // slight tilt
+    // Tighter cadence + visual tilt + new spinning + split-wedge attacks.
+    this.salvoCrossTimerMs = 1800;
+    this.bowVolleyTimerMs = 3000;
+    this.sternMortarTimerMs = 5000;
+    this.spinningSpiralTimerMs = 3500;
+    this.splitWedgeTimerMs = 2000;
+    this.container.setRotation(0.12);
     this.scene.tweens.add({
       targets: this.label,
       scale: { from: 1, to: 1.2 },
       yoyo: true,
       duration: 300,
     });
-    // Label flash.
     this.label.setText("PHASE 2 — 'Last Stand'");
     this.scene.time.delayedCall(1500, () => {
       this.label.setText("HMS THUNDERSTRIKE — Frigate Captain");
@@ -156,15 +154,38 @@ export class FrigateCaptain extends Enemy {
     if (this.x > WORLD_WIDTH - 200) this.anchorDirection = -1;
     if (this.x < 200) this.anchorDirection = 1;
 
-    // Broadside timer.
-    this.broadsideTimerMs -= deltaMs;
-    if (this.broadsideTimerMs <= 0) {
-      const side: 'port' | 'starboard' = Math.random() < 0.5 ? 'port' : 'starboard';
-      this.fireBroadside(side);
-      this.broadsideTimerMs = this.phase === 1 ? 3000 : this.hp < 10 ? 800 : 1500;
+    // PRD 1 — five attacks on independent timers. Each fires from a
+    // distinct weapon point so the player sees gun positions light up
+    // around the boss in any 10-second window.
+    this.salvoCrossTimerMs -= deltaMs;
+    if (this.salvoCrossTimerMs <= 0) {
+      this.fireSalvoCross();
+      this.salvoCrossTimerMs = this.phase === 1 ? 2400 : this.hp < 10 ? 1100 : 1800;
+    }
+    this.bowVolleyTimerMs -= deltaMs;
+    if (this.bowVolleyTimerMs <= 0) {
+      this.fireBowVolley();
+      this.bowVolleyTimerMs = this.phase === 1 ? 4000 : 3000;
+    }
+    this.sternMortarTimerMs -= deltaMs;
+    if (this.sternMortarTimerMs <= 0) {
+      this.fireSternMortar();
+      this.sternMortarTimerMs = this.phase === 1 ? 6000 : 5000;
+    }
+    if (this.phase === 2) {
+      this.spinningSpiralTimerMs -= deltaMs;
+      if (this.spinningSpiralTimerMs <= 0) {
+        this.fireSpinningSpiral();
+        this.spinningSpiralTimerMs = 3500;
+      }
+      this.splitWedgeTimerMs -= deltaMs;
+      if (this.splitWedgeTimerMs <= 0) {
+        this.fireSplitWedge();
+        this.splitWedgeTimerMs = 2000;
+      }
     }
 
-    // Flare / summon timer (phase 1 summons skiffs; phase 2 summons gunboats).
+    // Flare / summon timer (preserved from before).
     this.flareTimerMs -= deltaMs;
     if (this.flareTimerMs <= 0) {
       if (this.phase === 1) {
@@ -177,55 +198,126 @@ export class FrigateCaptain extends Enemy {
     }
   }
 
-  /** Counter for periodic radial bursts in phase 2. */
-  private burstShotCounter = 0;
-
-  private fireBroadside(side: 'port' | 'starboard'): void {
-    const sign = side === 'port' ? -1 : 1;
+  // ────────────────────────────────────────────────────────────────
+  // Attack 1 (P1+P2): Salvo Cross — port + starboard fans, lead-aimed.
+  // Fires from BOTH flank-cannon clusters simultaneously, so the player
+  // sees two muzzle banks light up. 5 bullets / side, 28° wedge, 2 dmg.
+  // ────────────────────────────────────────────────────────────────
+  private fireSalvoCross(): void {
     const player = this.scene.player;
     const speed = 450;
-    // Lead-aim at the player's predicted position.
-    const ox = sign * 45;
-    const oy = 0;
-    const ang = leadAimAngle(this.x + ox, this.y + oy, { x: player.x, y: player.y, vx: player.vx, vy: player.vy }, speed);
-
-    // 5-bullet symmetric fan from the broadside row — geometric wedge.
-    fanSpread(this.scene, this.x + ox, this.y + oy, ang, {
-      bullets: 5,
-      spreadDeg: 28,
-      speed,
-      damage: 2,
+    fireFromPoints({ x: this.x, y: this.y }, [[-50, -10], [50, -10]] as const, (px, py) => {
+      const ang = leadAimAngle(px, py,
+        { x: player.x, y: player.y, vx: player.vx, vy: player.vy }, speed);
+      fanSpread(this.scene, px, py, ang, {
+        bullets: 5, spreadDeg: 28, speed, damage: 2,
+      }, 'frigate-captain', 'cannon');
+      this.scene.fx.muzzleFlash(px, py, 0xffb050);
     });
-    // Per-cannon muzzle flashes along the row.
-    for (let i = 0; i < 5; i++) {
-      this.scene.fx.muzzleFlash(this.x + ox, this.y - 30 + i * 15, 0xffb050);
-    }
-
-    // Phase 2: every 3rd shot, follow the broadside with a 360° radial burst.
-    if (this.phase === 2) {
-      this.burstShotCounter += 1;
-      if (this.burstShotCounter % 3 === 0) {
-        const seed = (this.burstShotCounter * 0.32) % (Math.PI * 2);
-        radialBurst(this.scene, this.x, this.y, {
-          bullets: 12,
-          speed: 280,
-          damage: 2,
-          angleOffsetRad: seed,
-        });
-        this.scene.fx.explosion(this.x, this.y, 90, 0xff8a3a);
-      }
-    }
-
-    // Recoil — squash-and-stretch on the body + camera shake.
     this.scene.tweens.add({
       targets: this.container,
-      scaleX: { from: 1.08, to: 1 },
-      scaleY: { from: 0.94, to: 1 },
-      duration: 180,
+      scaleX: { from: 1.06, to: 1 },
+      scaleY: { from: 0.96, to: 1 },
+      duration: 160,
       ease: 'Cubic.out',
     });
-    this.scene.cameras.main.shake(120, 0.004);
     this.scene.audio.sfxCannon();
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // Attack 2 (P1+P2): Bow Volley — 3-bullet arrow shot from bow tip.
+  // Aimed straight at player. Faster than salvo (550 px/s).
+  // ────────────────────────────────────────────────────────────────
+  private fireBowVolley(): void {
+    const bx = this.x;
+    const by = this.y - 90;
+    const player = this.scene.player;
+    const speed = 550;
+    const ang = leadAimAngle(bx, by,
+      { x: player.x, y: player.y, vx: player.vx, vy: player.vy }, speed);
+    fanSpread(this.scene, bx, by, ang, {
+      bullets: 3, spreadDeg: 16, speed, damage: 2,
+    }, 'frigate-captain', 'sniper');
+    this.scene.fx.muzzleFlash(bx, by, 0xffd060);
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // Attack 3 (P1+P2): Stern Mortar — slow heavy shot from stern with
+  // ground-target telegraph. 1 bullet, 4 dmg. Fires from (0, +80).
+  // ────────────────────────────────────────────────────────────────
+  private fireSternMortar(): void {
+    const sx = this.x;
+    const sy = this.y + 80;
+    const player = this.scene.player;
+    // Predict where player will be in ~1.0 s — that's the impact point.
+    const tx = player.x + player.vx * 1.0;
+    const ty = player.y + player.vy * 1.0;
+    // Telegraph ring at landing zone — 800 ms warning.
+    const ring = this.scene.add.circle(tx, ty, 50, 0xff5028, 0)
+      .setStrokeStyle(3, 0xff5028, 0.85);
+    ring.setDepth(3);
+    this.scene.tweens.add({
+      targets: ring,
+      alpha: { from: 0.2, to: 0.85 },
+      yoyo: true,
+      duration: 400,
+      repeat: 0,
+      onComplete: () => ring.destroy(),
+    });
+    // After telegraph, fire the actual shot.
+    this.scene.time.delayedCall(800, () => {
+      if (!this.active) return;
+      const dx = tx - sx;
+      const dy = ty - sy;
+      const len = Math.hypot(dx, dy) || 1;
+      const speed = 420;
+      this.scene.enemies.spawnEnemyBullet(sx, sy,
+        (dx / len) * speed, (dy / len) * speed,
+        4, 'frigate-captain', 'fire');
+    });
+    this.scene.fx.muzzleFlash(sx, sy, 0xff7028);
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // Attack 4 (P2 only): Spinning Spiral — 4-armed parametric spiral
+  // from boss center. Each burst rotates the seed 60° so the spiral
+  // visibly spins between bursts. 16 bullets total per burst.
+  // ────────────────────────────────────────────────────────────────
+  private fireSpinningSpiral(): void {
+    parametricSpiral(this.scene, this.x, this.y, {
+      bulletsPerArm: 4,
+      arms: 4,
+      startAngle: this.spiralPhase,
+      armSpacingRad: 0.18,
+      speed: 280,
+      damage: 2,
+      bulletKind: 'storm',
+      source: 'frigate-captain',
+    });
+    this.spiralPhase += Math.PI / 3; // 60° rotation per burst
+    this.scene.fx.explosion(this.x, this.y, 70, 0xaaccff);
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // Attack 5 (P2 only): Split-Aim Wedge — twin 7-bullet wedges fired
+  // from bow tip, one biased ±25° left of player vector and one ±25°
+  // right. Forces the player to dodge sideways AND not park on
+  // either side of center.
+  // ────────────────────────────────────────────────────────────────
+  private fireSplitWedge(): void {
+    const bx = this.x;
+    const by = this.y - 90;
+    const player = this.scene.player;
+    const speed = 380;
+    const baseAng = leadAimAngle(bx, by,
+      { x: player.x, y: player.y, vx: player.vx, vy: player.vy }, speed);
+    const splitOff = (25 * Math.PI) / 180; // 25° offset
+    for (const off of [-splitOff, splitOff]) {
+      fanSpread(this.scene, bx, by, baseAng + off, {
+        bullets: 7, spreadDeg: 50, speed, damage: 2,
+      }, 'frigate-captain', 'cannon');
+    }
+    this.scene.fx.muzzleFlash(bx, by, 0xffe0a0);
   }
 
   private summonSkiffs(count: number): void {

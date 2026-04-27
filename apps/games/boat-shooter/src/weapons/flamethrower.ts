@@ -65,7 +65,8 @@ export class Flamethrower extends Weapon {
     burnMs: number;
   } {
     switch (lvl) {
-      case 1: return { coneDeg: 60, range: 180, dmgPerTick: 1.0, burnDps: 1, burnMs: 2000 };
+      // PRD 7 buff: dmgPerTick 1.0 → 1.25 since the elemental is now the only starter weapon.
+      case 1: return { coneDeg: 60, range: 180, dmgPerTick: 1.25, burnDps: 1, burnMs: 2000 };
       case 2: return { coneDeg: 70, range: 200, dmgPerTick: 1.0, burnDps: 1, burnMs: 2000 };
       case 3: return { coneDeg: 70, range: 200, dmgPerTick: 1.5, burnDps: 1, burnMs: 2000 };
       case 4: return { coneDeg: 80, range: 240, dmgPerTick: 1.5, burnDps: 2, burnMs: 2000 };

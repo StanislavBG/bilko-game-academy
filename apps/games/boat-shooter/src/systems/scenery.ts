@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { EnvironmentSpec } from '@bilko/boat-shooter-schema';
 import type { StageScene } from '../scenes/stage-scene';
 import { WORLD_HEIGHT, WORLD_WIDTH, RIVER_SCROLL_SPEED } from '../constants';
 import type { WaterBiome } from './water-shader';
@@ -32,7 +33,18 @@ type PropKind =
   | 'debris-crate'
   | 'fleet-silhouette'
   | 'blockade-line'
-  | 'wreckage';
+  | 'wreckage'
+  // Ambient fish — pure decoration drifting across the water.
+  | 'fish-school'
+  | 'fish-large'
+  | 'fish-koi-trio'
+  // PRD 3 — additional river decoration variety.
+  | 'water-pad'
+  | 'cattail'
+  | 'bullrush'
+  | 'frog-trio'
+  | 'turtle'
+  | 'fish-bass-trio';
 
 /**
  * Target on-screen width (px) for each AI-generated scenery sprite. Source
@@ -42,17 +54,28 @@ type PropKind =
  */
 const TARGET_PROP_WIDTHS: Partial<Record<PropKind, number>> = {
   'reed-clump': 96,
-  'grass-tuft': 40,
+  'grass-tuft': 64,         // PRD 3 bump 40 → 64 (was reading as black box).
   'river-log': 72,
   'mud-bar': 140,
-  'stone-marker': 40,
+  'stone-marker': 64,       // PRD 3 bump 40 → 64.
   'mangrove-bank': 220,
   'mangrove-root': 60,
   'dock-plank': 48,
-  'debris-crate': 30,
+  'debris-crate': 56,       // PRD 3 bump 30 → 56.
   'fleet-silhouette': 180,
   'blockade-line': 400,
   'wreckage': 90,
+  // Ambient fish — small enough to feel like fish, big enough to spot.
+  'fish-school': 110,
+  'fish-large': 80,
+  'fish-koi-trio': 95,
+  // PRD 3 — additional flora + wildlife.
+  'water-pad': 90,
+  'cattail': 80,
+  'bullrush': 96,
+  'frog-trio': 70,
+  'turtle': 75,
+  'fish-bass-trio': 95,
 };
 
 export interface SceneryPropDef {
@@ -104,8 +127,43 @@ export class SceneryLayer {
   constructor(private readonly scene: StageScene) {}
 
   setBiome(biome: WaterBiome): void {
-    this.clear();
+    this.applyManifest(MANIFESTS[biome]);
+  }
+
+  /**
+   * Data-driven path: pick a manifest based on the env's biome (mapped onto
+   * the legacy WaterBiome union), then optionally filter spawners + static
+   * props by the env's `sceneryProps` allow-list when it's non-empty. An
+   * empty allow-list = "no filter" so an admin who hasn't authored a list
+   * still gets the full manifest.
+   *
+   * Why filter rather than synthesize: the manifests carry per-prop depth /
+   * parallax / interval data that the schema's prop-id list intentionally
+   * doesn't model. Subtractive filtering preserves authored visual rhythm.
+   */
+  setEnvironment(env: EnvironmentSpec): void {
+    const biome = envBiomeToWaterBiome(env);
     const manifest = MANIFESTS[biome];
+    if (!manifest) {
+      this.applyManifest(undefined);
+      return;
+    }
+    if (env.sceneryProps.length === 0) {
+      this.applyManifest(manifest);
+      return;
+    }
+    const allow = new Set(env.sceneryProps.map(stripSceneryPrefix));
+    const filtered: SceneryManifest = {
+      props: manifest.props.filter((p) => allow.has(p.kind)),
+      ...(manifest.spawners
+        ? { spawners: manifest.spawners.filter((s) => allow.has(s.kind)) }
+        : {}),
+    };
+    this.applyManifest(filtered);
+  }
+
+  private applyManifest(manifest: SceneryManifest | undefined): void {
+    this.clear();
     if (!manifest) return;
     this.ensureTextures();
 
@@ -119,7 +177,6 @@ export class SceneryLayer {
           callback: () => this.spawnFromSpec(spec),
         });
         this.repeatEvents.push(ev);
-        // Prime with one immediate spawn so the stage isn't empty at start.
         this.spawnFromSpec(spec);
       }
     }
@@ -633,6 +690,59 @@ const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
         parallax: 1,
         depth: -66,
       },
+      // Ambient fish — pure decoration, no interaction. Schools appear
+      // mid-channel, koi pairs hug the banks. Slightly slower parallax
+      // sells "swimming WITH the current" rather than "drifting like
+      // debris". Depth -72 so they sit visually below the player ship.
+      {
+        kind: 'fish-school',
+        intervalMs: 3800,
+        xRange: [180, WORLD_WIDTH - 180],
+        y: -60,
+        rotationRange: [-0.2, 0.2],
+        scaleRange: [0.8, 1.2],
+        parallax: 0.85,
+        depth: -72,
+      },
+      {
+        kind: 'fish-large',
+        intervalMs: 9000,
+        xRange: [200, WORLD_WIDTH - 200],
+        y: -60,
+        rotationRange: [-0.3, 0.3],
+        scaleRange: [0.85, 1.15],
+        parallax: 0.9,
+        depth: -71,
+      },
+      {
+        kind: 'fish-koi-trio',
+        intervalMs: 6500,
+        xRange: [140, 280],
+        y: -60,
+        rotationRange: [-0.4, 0.4],
+        scaleRange: [0.8, 1.1],
+        parallax: 0.85,
+        depth: -73,
+      },
+      {
+        kind: 'fish-koi-trio',
+        intervalMs: 6500,
+        xRange: [WORLD_WIDTH - 280, WORLD_WIDTH - 140],
+        y: -60,
+        rotationRange: [-0.4, 0.4],
+        scaleRange: [0.8, 1.1],
+        parallax: 0.85,
+        depth: -73,
+      },
+      // PRD 3 — additional flora + wildlife so the river reads alive.
+      { kind: 'water-pad', intervalMs: 4500, xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [0, Math.PI * 2], scaleRange: [0.85, 1.2], parallax: 1, depth: -69 },
+      { kind: 'cattail',   intervalMs: 1100, xRange: [40, 130], y: -120, rotationRange: [-0.15, 0.15], scaleRange: [0.85, 1.2], parallax: 1, depth: -68 },
+      { kind: 'cattail',   intervalMs: 1100, xRange: [WORLD_WIDTH - 130, WORLD_WIDTH - 40], y: -120, rotationRange: [-0.15, 0.15], scaleRange: [0.85, 1.2], parallax: 1, depth: -68 },
+      { kind: 'bullrush',  intervalMs: 900,  xRange: [60, 150], y: -150, rotationRange: [-0.1, 0.1], scaleRange: [0.85, 1.15], parallax: 1, depth: -68 },
+      { kind: 'bullrush',  intervalMs: 900,  xRange: [WORLD_WIDTH - 150, WORLD_WIDTH - 60], y: -150, rotationRange: [-0.1, 0.1], scaleRange: [0.85, 1.15], parallax: 1, depth: -68 },
+      { kind: 'frog-trio', intervalMs: 12000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.9, 1.1], parallax: 1, depth: -71 },
+      { kind: 'turtle',    intervalMs: 9500, xRange: [180, WORLD_WIDTH - 180], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.1], parallax: 0.9, depth: -71 },
+      { kind: 'fish-bass-trio', intervalMs: 7000, xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.15], parallax: 0.85, depth: -73 },
     ],
   },
 
@@ -762,3 +872,27 @@ const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
     ],
   },
 };
+
+// Map EnvironmentSpec.biome (schema's wider union) onto the legacy WaterBiome
+// keys used by MANIFESTS. Defaults to 'sunlit' so unknown biomes still get a
+// non-empty prop set rather than a blank stage.
+function envBiomeToWaterBiome(env: EnvironmentSpec): WaterBiome {
+  switch (env.biome) {
+    case 'rivermouth': return 'rivermouth';
+    case 'inland':     return 'channels';
+    case 'delta':
+    case 'open-sea':   return 'open-sea';
+    case 'cursed':     return 'night';
+    case 'volcanic':   return 'volcanic';
+    case 'frozen':
+    case 'storm':      return 'fog';
+    default:           return 'sunlit';
+  }
+}
+
+// Strip the conventional `scenery-` namespace prefix from a sprite id so it
+// matches the bare PropKind union used by the manifest. Unknown ids fall
+// through unchanged — the allow-list will simply not match them.
+function stripSceneryPrefix(id: string): string {
+  return id.startsWith('scenery-') ? id.slice('scenery-'.length) : id;
+}

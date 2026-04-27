@@ -251,6 +251,10 @@ function formatShort(e: CombatLogEntry, now: number): string {
       return `[${t}] 🌊 ${e.status} ${e.added ? 'applied' : 'stacked'} → ${prettyName(e.target)}`;
     case 'reaction':
       return `[${t}] ✴ ${e.reaction} → ${prettyName(e.target)}`;
+    case 'pickup':
+      return `[${t}] + ${e.amount} ${e.pickup}`;
+    case 'levelup':
+      return `[${t}] ★ Level ${e.level}`;
   }
 }
 

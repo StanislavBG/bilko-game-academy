@@ -1,9 +1,10 @@
 import { ShipwrightChest } from '../../systems/evolution-chest';
 import Phaser from 'phaser';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * P5 Pirate Champion "Black Barnacle" Captain Mort — 3-phase Act II mini-boss.
@@ -12,17 +13,6 @@ import { WORLD_WIDTH } from '../../constants';
  * P2 (40→10): same + Mort's pistol @3s; ramming brigands /10s.
  * P3 (10→0): Charge mode — high-speed ram only.
  */
-export const PIRATE_CHAMPION_SPEC: EnemySpec = {
-  id: 'pirate-champion',
-  maxHp: 90,
-  armor: 4,
-  speed: 110,
-  contactDamage: 4,
-  collisionRadius: 56,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 5, gemChance: 1.0, xpOrbs: 3 },
-  color: 0x7a1a1a,
-  visualRadius: 52,
-};
 
 export class PirateChampion extends Enemy {
   private phase: 1 | 2 | 3 = 1;
@@ -35,7 +25,7 @@ export class PirateChampion extends Enemy {
   private banner: BossBanner;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, PIRATE_CHAMPION_SPEC, x, y);
+    super(scene, getEnemySpec('pirate-champion'), x, y);
     this.banner = new BossBanner(scene, "'Black Barnacle' Captain Mort", () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase("Phase 1: The Flagship");
     this.banner.redraw();

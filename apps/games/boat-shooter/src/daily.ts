@@ -10,7 +10,7 @@
  * a per-day leaderboard board keyed by `daily-<YYYY-MM-DD>`.
  */
 
-import { SHIP_IDS, type ShipId } from './data/starting-ships';
+import { getShipIds, type ShipId } from './data/starting-ships';
 import { mulberry32, WEEKLY_MODIFIER_POOL, type ModifierId } from './weekly';
 
 export interface DailyChallenge {
@@ -50,7 +50,8 @@ export function currentDailyChallenge(now: Date = new Date()): DailyChallenge {
 
   // Ship rotation — purely index-based off the seed so the same date → same ship
   // without consuming the RNG stream (keeps modifier draw stable).
-  const shipId = SHIP_IDS[seed % SHIP_IDS.length] ?? SHIP_IDS[0]!;
+  const shipIds = getShipIds();
+  const shipId = shipIds[seed % shipIds.length] ?? shipIds[0]!;
 
   // Modifier pick — 1 modifier (simpler than weekly's 2) via a single RNG draw.
   const rng = mulberry32(seed);

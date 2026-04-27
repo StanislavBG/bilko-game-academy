@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { GameContext } from '@bilko/game-sdk';
-import { WORLD_WIDTH, WORLD_HEIGHT, RIVER_SCROLL_SPEED, SAFE_AREA_MARGIN, PLAYER_PLAY_MARGIN } from '../constants';
+import { WORLD_WIDTH, WORLD_HEIGHT, RIVER_SCROLL_SPEED, SAFE_AREA_MARGIN, PLAYER_PLAY_MARGIN, HUD_DECK_HEIGHT } from '../constants';
 import { RunState } from '../run-state';
 import { Player } from '../entities/player';
 import { WeaponSystem } from '../weapons/weapon-system';
@@ -11,6 +11,7 @@ import { CollisionSystem } from '../systems/collision';
 import { WaveSpawner } from '../systems/wave-spawner';
 import { stageById } from '../data/stages';
 import type { StageSpec } from '../systems/wave-spawner';
+import { getEnvironmentForStage } from '../content/active-pack';
 import { StatusSystem } from '../systems/status';
 import { ReactionSystem } from '../systems/reactions';
 import { AoeZoneSystem } from '../systems/aoe-zone';
@@ -144,19 +145,29 @@ export class StageScene extends Phaser.Scene {
     this.time.timeScale = speedFromUrl;
 
     // FX + water first so everything else can rely on them.
+    // Env data drives water/weather/scenery when the active pack ships an
+    // EnvironmentSpec for this stage; otherwise fall through to the legacy
+    // biome-by-id inference so default content plays exactly as before.
     this.fx = new FxSystem(this);
     this.water = new WaterShader(this);
+    const env = getEnvironmentForStage(this.stageSpec.id);
     const biome = this.biomeForStage();
-    this.water.setBiome(biome);
+    if (env) {
+      this.water.setEnvironment(env);
+      this.riverScrollMul = env.riverScrollSpeedMul;
+    } else {
+      this.water.setBiome(biome);
+    }
     this.vignette = new Vignette(this);
-    this.vignette.setBiome(biome);
+    this.vignette.setBiome(this.water.currentBiome());
     this.audio = new AudioSystem();
     this.audio.attachSettings(this._ctx.settings);
     this.achievements = new AchievementTracker(this, this._ctx);
 
     // Act-themed music loop based on biome.
+    const resolvedBiome = this.water.currentBiome();
     const actIBiomes: WaterBiome[] = ['sunlit', 'rivermouth', 'channels', 'open-sea'];
-    const act = actIBiomes.includes(biome) ? 1 : biome === 'fog' ? 2 : 3;
+    const act = actIBiomes.includes(resolvedBiome) ? 1 : resolvedBiome === 'fog' ? 2 : 3;
     this.audio.playActMusic(act);
 
     // Kill the music loop the moment this scene stops — prevents the
@@ -172,11 +183,13 @@ export class StageScene extends Phaser.Scene {
 
     // Ambient weather (fog in Act II, ashfall in Act III).
     this.weather = new WeatherSystem(this);
-    this.weather.setBiome(biome);
+    if (env) this.weather.setEnvironment(env);
+    else this.weather.setBiome(biome);
 
     // Scenery — reeds / mangroves / fleet silhouettes; pure visual, no collision.
     this.scenery = new SceneryLayer(this);
-    this.scenery.setBiome(biome);
+    if (env) this.scenery.setEnvironment(env);
+    else this.scenery.setBiome(biome);
 
     // Hazards — rocks + barrels drift in from above on a timer.
     this.hazards = new HazardSystem(this);
@@ -230,10 +243,10 @@ export class StageScene extends Phaser.Scene {
     // Player.
     this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT * 0.75);
 
-    // Start the player with the chosen ship's loadout. Every ship ALSO
-    // ships with Bow Cannon L1 as a reliable workhorse — the elemental
-    // weapon is the signature, not the only option. Populate here
-    // because we need WeaponSystem + RunState to exist first.
+    // Start the player with the chosen ship's loadout: ONLY the elemental
+    // weapon + the elemental passive at L1 (PRD 7 — earn-your-power arc).
+    // Bow Cannon stays in the level-up + merchant pool — players can pick
+    // it as their second weapon if they want.
     if (this.shipConfig) {
       // Apply elemental stat tweaks once per run. If the player is
       // returning mid-campaign the tweaks were already baked in during
@@ -245,7 +258,6 @@ export class StageScene extends Phaser.Scene {
       this.runState.addOrLevelWeapon(this.shipConfig.starterWeapon);
       this.runState.addOrLevelPassive(this.shipConfig.starterPassive);
     }
-    this.runState.addOrLevelWeapon('bow-cannon');
 
     // Wave schedule.
     this.spawner = new WaveSpawner(this, this.stageSpec);
@@ -350,10 +362,28 @@ export class StageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.DESTROY, () => this.tutorial?.abort());
   }
 
-  /** Brief READY → GO! intro so the player has a beat before waves start. */
+  /** Brief READY → GO! intro so the player has a beat before waves start.
+   *  Also flashes the act-stage `displayCode` (e.g. "1-1 Rivermouth")
+   *  per PRD 3 so the player feels the campaign progression. */
   private showStageIntro(): void {
     const W = this.scale.width;
     const H = this.scale.height;
+    // Stage label badge — small painterly card above the GET READY text.
+    const code = this.stageSpec.displayCode ?? '';
+    const labelText = code ? `${code}  •  ${this.stageSpec.title}` : this.stageSpec.title;
+    const label = this.add.text(W / 2, H / 2 - 80, labelText, {
+      fontFamily: 'Palatino, Georgia, serif',
+      fontSize: '36px',
+      color: '#cce4ea',
+      stroke: '#000',
+      strokeThickness: 4,
+      resolution: Math.max(2, window.devicePixelRatio || 1),
+    }).setOrigin(0.5, 0.5).setDepth(1500).setAlpha(0);
+    this.tweens.add({ targets: label, alpha: 1, duration: 400 });
+    this.time.delayedCall(1500, () => {
+      this.tweens.add({ targets: label, alpha: 0, duration: 600, onComplete: () => label.destroy() });
+    });
+
     const ready = this.add.text(W / 2, H / 2, 'GET READY', {
       fontFamily: 'Palatino, Georgia, serif',
       fontSize: '96px',
@@ -377,11 +407,13 @@ export class StageScene extends Phaser.Scene {
 
   /** Debug time multiplier (1 = normal; set via ?speed=N URL flag). */
   timeMultiplier = 1;
+  /** Multiplier on RIVER_SCROLL_SPEED — driven by env.riverScrollSpeedMul; defaults to 1. */
+  private riverScrollMul = 1;
 
   override update(_time: number, deltaMs: number): void {
     const dt = deltaMs * this.timeMultiplier;
     // Scroll water (creates the illusion of the boat moving up the river).
-    this.water.scroll(dt, RIVER_SCROLL_SPEED);
+    this.water.scroll(dt, RIVER_SCROLL_SPEED * this.riverScrollMul);
 
     // Tutorial (§1.1) — ticked before systems so its enemy spawns land this
     // frame. The spawner is skipped while the tutorial is active OR pending
@@ -428,11 +460,16 @@ export class StageScene extends Phaser.Scene {
     return this.stageSpec?.id ?? '—';
   }
 
-  /** Clamp a position to the playable area (uses the tighter player margin). */
+  /** Clamp a position to the playable area. The bottom margin keeps the
+   *  player above the wooden HUD deck so the boat never slides under it. */
   clampToPlayArea(x: number, y: number): { x: number; y: number } {
     return {
       x: Phaser.Math.Clamp(x, PLAYER_PLAY_MARGIN, WORLD_WIDTH - PLAYER_PLAY_MARGIN),
-      y: Phaser.Math.Clamp(y, PLAYER_PLAY_MARGIN, WORLD_HEIGHT - PLAYER_PLAY_MARGIN),
+      y: Phaser.Math.Clamp(
+        y,
+        PLAYER_PLAY_MARGIN,
+        WORLD_HEIGHT - HUD_DECK_HEIGHT - PLAYER_PLAY_MARGIN,
+      ),
     };
   }
 
@@ -523,11 +560,19 @@ export class StageScene extends Phaser.Scene {
       banner.destroy();
       sub.destroy();
       this.scene.pause();
-      this.scene.launch('StageClearScene', {
+      // PRD 9 — Boss Spoils overlay sits between the loot-gather window
+      // and StageClearScene. On close, advance to the existing summary.
+      this.scene.launch('BossSpoilsScene', {
         runState: this.runState,
-        stageId: this.stageSpec.id,
-        ctx: this._ctx,
         stageKey: this.scene.key,
+        onClose: () => {
+          this.scene.launch('StageClearScene', {
+            runState: this.runState,
+            stageId: this.stageSpec.id,
+            ctx: this._ctx,
+            stageKey: this.scene.key,
+          });
+        },
       });
     });
   }

@@ -4,6 +4,7 @@ import { Enemy, type EnemySpec } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * B4 The Drowned Admiralty — Act II finale. Triple Target mechanic.
@@ -14,18 +15,10 @@ import { WORLD_WIDTH } from '../../constants';
  * For implementation simplicity, we model this as a single Enemy instance
  * (the Flagship) with two companions spawned as children. The composite
  * "boss HP" is the sum.
+ *
+ * Companion specs (Interceptor + Wraith) stay inline — they aren't part
+ * of the EnemyId schema and only this file consumes them.
  */
-export const DROWNED_ADMIRALTY_FLAGSHIP_SPEC: EnemySpec = {
-  id: 'drowned-admiralty-flagship',
-  maxHp: 160,
-  armor: 4,
-  speed: 70,
-  contactDamage: 4,
-  collisionRadius: 60,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 10, gemChance: 1.0, xpOrbs: 4 },
-  color: 0x3a4a8a,
-  visualRadius: 58,
-};
 
 const INTERCEPTOR_SPEC: EnemySpec = {
   id: 'drowned-admiralty-interceptor',
@@ -138,7 +131,7 @@ export class DrownedAdmiralty extends Enemy {
   private shieldAura: Phaser.GameObjects.Arc | null = null;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, DROWNED_ADMIRALTY_FLAGSHIP_SPEC, x, y);
+    super(scene, getEnemySpec('drowned-admiralty'), x, y);
     this.banner = new BossBanner(scene, 'The Drowned Admiralty — Soul Flagship', () => this.compositeMax(), () => this.compositeHp());
     this.banner.setPhase('Phase 1: Colors Of The Damned');
     this.banner.redraw();

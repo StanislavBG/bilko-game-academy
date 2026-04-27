@@ -35,7 +35,8 @@ export class Mortar extends Weapon {
     cluster: boolean;
   } {
     switch (lvl) {
-      case 1: return { count: 1, intervalMs: 3000, dmg: 3, blastRadius: 80, cluster: false };
+      // PRD 7 buff: 3000→2400ms (1.25× rate) since elemental is the only starter.
+      case 1: return { count: 1, intervalMs: 2400, dmg: 3, blastRadius: 80, cluster: false };
       case 2: return { count: 2, intervalMs: 3000, dmg: 3, blastRadius: 80, cluster: false };
       case 3: return { count: 2, intervalMs: 2500, dmg: 3, blastRadius: 100, cluster: false };
       case 4: return { count: 3, intervalMs: 2500, dmg: 4, blastRadius: 120, cluster: false };

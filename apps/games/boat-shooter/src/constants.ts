@@ -19,7 +19,7 @@ export const PLAYER_BASELINE = {
   speed: 700, // px/sec — snappy; outpaces every normal enemy including rammers
   accel: 3200, // px/sec^2 — reach max speed in ~0.2s for responsive dodging
   iframeDurationMs: 900,
-  magnetRadius: 280, // px — generous magnet so XP + coins fly to the player while they focus on combat
+  magnetRadius: 80, // px — close-range only (PRD 2). Drops drift down with the river; the player must sail near them. Cargo Nets / passives multiply this.
   coinValueMult: 1.0,
   critChance: 0.1,
   critMultiplier: 1.5,
@@ -50,3 +50,5 @@ export const DAMAGE_NUMBER = {
 export const SAFE_AREA_MARGIN = 80;
 /** Player-only margin (lets the boat roam closer to top/bottom than enemy spawns). */
 export const PLAYER_PLAY_MARGIN = 40;
+/** Wooden bottom HUD deck height — gameplay area ends at WORLD_HEIGHT - HUD_DECK_HEIGHT. */
+export const HUD_DECK_HEIGHT = 216;

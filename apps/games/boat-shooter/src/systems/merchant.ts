@@ -3,6 +3,7 @@ import type { StageScene } from '../scenes/stage-scene';
 import { allWeapons } from '../weapons/weapon-catalog';
 import { allPassives } from '../weapons/passive-catalog';
 import { admiralsFlagRerollReduction } from './battle';
+import { hasSprite } from './sprite-loader';
 
 /**
  * Shipwright Cove — mid-stage merchant encounter.
@@ -38,6 +39,8 @@ export class MerchantSystem {
   private lanternGlow: Phaser.GameObjects.Arc | null = null;
   private label: Phaser.GameObjects.Text | null = null;
   private ropeLine: Phaser.GameObjects.Graphics | null = null;
+  /** Gold halo ring drawn when player is within 200 px (PRD 8). */
+  private haloRing: Phaser.GameObjects.Arc | null = null;
   /** Current proximity stage — `idle | approaching | close | docking`. */
   private approachStage: 'idle' | 'approaching' | 'close' | 'docking' = 'idle';
   private dockingStartedAt: number | null = null;
@@ -75,6 +78,13 @@ export class MerchantSystem {
       this.enterStage(next);
     }
     this.tickStage(next, dx, dy, dist);
+
+    // PRD 8 — gold halo ring pulses when within 200 px (anticipation cue).
+    if (this.haloRing) {
+      const within = dist < 200;
+      const targetA = within ? 0.55 + Math.sin(this.scene.time.now / 220) * 0.18 : 0;
+      this.haloRing.setAlpha(targetA);
+    }
   }
 
   private enterStage(stage: 'idle' | 'approaching' | 'close' | 'docking'): void {
@@ -179,18 +189,32 @@ export class MerchantSystem {
     const container = this.scene.add.container(x, y);
     container.setDepth(4);
 
-    const g = this.scene.add.graphics();
-    // Hut on a small dock.
-    g.fillStyle(0x8b5a2b, 1).fillRect(-40, -30, 80, 50);
-    g.fillStyle(0xe0b063, 1).fillTriangle(-40, -30, 40, -30, 0, -56);
-    g.fillStyle(0x2a1a08, 1).fillRect(-6, 0, 12, 20);
-    // Dock planks.
-    g.fillStyle(0x5a3a20, 1).fillRect(-50, 20, 100, 8);
-    container.add(g);
+    // PRD 8 — gold halo ring (under everything, only visible when close).
+    const halo = this.scene.add.circle(0, -10, 110, 0xffd166, 0);
+    halo.setBlendMode(Phaser.BlendModes.ADD);
+    container.add(halo);
+    this.haloRing = halo;
 
-    // Mooring bollards at the end of each dock plank.
-    g.fillStyle(0x2a1a08, 1).fillCircle(-46, 24, 3);
-    g.fillStyle(0x2a1a08, 1).fillCircle(46, 24, 3);
+    // Prefer the AI-generated 2K shipyard sprite. 1.4× the previous footprint
+    // (was ~100 px wide procedural; sprite renders at ~140 px wide here).
+    const SPRITE_KEY = 'sprite-scenery-shipyard-dock';
+    if (hasSprite(this.scene, SPRITE_KEY)) {
+      const dock = this.scene.add.image(0, -8, SPRITE_KEY);
+      dock.setDisplaySize(180, 180);
+      container.add(dock);
+    } else {
+      const g = this.scene.add.graphics();
+      // Hut on a small dock.
+      g.fillStyle(0x8b5a2b, 1).fillRect(-40, -30, 80, 50);
+      g.fillStyle(0xe0b063, 1).fillTriangle(-40, -30, 40, -30, 0, -56);
+      g.fillStyle(0x2a1a08, 1).fillRect(-6, 0, 12, 20);
+      // Dock planks.
+      g.fillStyle(0x5a3a20, 1).fillRect(-50, 20, 100, 8);
+      // Mooring bollards at the end of each dock plank.
+      g.fillStyle(0x2a1a08, 1).fillCircle(-46, 24, 3);
+      g.fillStyle(0x2a1a08, 1).fillCircle(46, 24, 3);
+      container.add(g);
+    }
 
     // Lantern on the hut roof — its glow scales with player proximity.
     const lanternPost = this.scene.add.rectangle(28, -40, 2, 12, 0x2a1a08, 1);
@@ -217,7 +241,7 @@ export class MerchantSystem {
     this.stock = this.makeStock();
 
     // Floating banner — text updates per approach stage.
-    const label = this.scene.add.text(0, -70, 'Shipwright Cove', {
+    const label = this.scene.add.text(0, -110, 'Shipwright Cove', {
       fontFamily: 'Palatino, Georgia, serif',
       fontSize: '20px',
       color: '#e0b063',
@@ -312,6 +336,7 @@ export class MerchantSystem {
         this.ropeLine?.destroy();
         this.ropeLine = null;
         this.lanternGlow = null;
+        this.haloRing = null;
         this.label = null;
         this.approachStage = 'idle';
         this.dockingStartedAt = null;

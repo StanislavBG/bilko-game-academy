@@ -1,6 +1,16 @@
 import Phaser from 'phaser';
 import { RunState } from '../run-state';
+import { CardView } from '../ui/card-view';
+import type { Card, CardElement } from '../ui/card';
+import { WEAPON_CARDS } from '../data/weapon-cards';
+import { PASSIVE_CARDS } from '../data/passive-cards';
 
+/**
+ * Legacy stock-item shape — kept exported because `merchant.ts` (the
+ * spawner system) emits items in this format. We translate to `Card`
+ * at scene-build time so MerchantScene + LevelUpScene + BossSpoilsScene
+ * all share a single render path.
+ */
 export interface MerchantStockItem {
   kind: 'weapon' | 'passive' | 'stat' | 'heal';
   id: string;
@@ -20,15 +30,15 @@ interface MerchantSceneData {
 }
 
 /**
- * Shipwright Cove merchant overlay. Darkens the stage, shows up to 4 item
- * cards, a reroll button (coin cost), and a "Set Sail" exit. Purchasing
- * removes that item from the stock; close resumes the stage.
+ * Shipwright Cove merchant overlay. Renders up to 4 stock cards via
+ * the shared `CardView` (PRD 6) plus a reroll + Set Sail control row.
+ * Hotkeys (PRD 5): Q/W/E/R buy slot 1/2/3/4, T rerolls, Enter exits.
  */
 export class MerchantScene extends Phaser.Scene {
   static readonly KEY = 'MerchantScene';
   private data_!: MerchantSceneData;
-  private cards: Phaser.GameObjects.Rectangle[] = [];
-  private labels: Phaser.GameObjects.Text[] = [];
+  private cardViews: CardView[] = [];
+  private coinLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: MerchantScene.KEY });
@@ -48,146 +58,163 @@ export class MerchantScene extends Phaser.Scene {
       fontFamily: 'Palatino, Georgia, serif',
       fontSize: '64px',
       color: '#e0b063',
+      resolution: Math.max(2, window.devicePixelRatio || 1),
     }).setOrigin(0.5, 0.5);
 
-    this.add.text(W / 2, H * 0.12 + 60, `Coins: 🪙 ${this.data_.runState.coins}`, {
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '26px',
-      color: '#cce4ea',
-    }).setOrigin(0.5, 0.5).setName('coin-label');
+    this.coinLabel = this.add.text(W / 2, H * 0.12 + 60,
+      `Coins: 🪙 ${this.data_.runState.coins}`, {
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '26px',
+        color: '#cce4ea',
+        resolution: Math.max(2, window.devicePixelRatio || 1),
+      }).setOrigin(0.5, 0.5);
 
     this.renderStock();
     this.renderControls();
+
+    // Hotkey input — Q/W/E/R buy slots 1-4; T rerolls; Enter sets sail.
+    this.input.keyboard?.on('keydown-Q', () => this.cardViews[0]?.trigger());
+    this.input.keyboard?.on('keydown-W', () => this.cardViews[1]?.trigger());
+    this.input.keyboard?.on('keydown-E', () => this.cardViews[2]?.trigger());
+    this.input.keyboard?.on('keydown-R', () => this.cardViews[3]?.trigger());
+    this.input.keyboard?.on('keydown-T', () => this.attemptReroll());
+    this.input.keyboard?.on('keydown-ENTER', () => this.exit());
+    this.input.keyboard?.on('keydown-SPACE', () => this.exit());
+
+    // Footer hint.
+    this.add.text(W / 2, H * 0.97, 'Q/W/E/R buy · T reroll · Enter set sail', {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '14px',
+      color: '#99c9d6',
+      resolution: Math.max(2, window.devicePixelRatio || 1),
+    }).setOrigin(0.5, 0.5);
   }
 
   private renderStock(): void {
-    this.cards.forEach((c) => c.destroy());
-    this.labels.forEach((l) => l.destroy());
-    this.cards = [];
-    this.labels = [];
+    this.cardViews.forEach((c) => c.destroy());
+    this.cardViews = [];
 
     const W = this.scale.width;
     const H = this.scale.height;
-    const items = this.data_.stock;
-    const cardW = 380;
-    const cardH = 220;
+    const items = this.data_.stock.slice(0, 4);
+    const HOTKEYS: Array<'Q' | 'W' | 'E' | 'R'> = ['Q', 'W', 'E', 'R'];
+
     const gap = 30;
-    const totalW = items.length * cardW + (items.length - 1) * gap;
-    const startX = (W - totalW) / 2;
+    const totalW = items.length * CardView.W + (items.length - 1) * gap;
+    const startX = (W - totalW) / 2 + CardView.W / 2;
+    const y = H * 0.5;
 
     items.forEach((item, i) => {
-      const x = startX + i * (cardW + gap);
-      const y = H * 0.4;
-      this.renderItemCard(x, y, cardW, cardH, item);
+      const card = this.itemToCard(item);
+      card.hotkey = HOTKEYS[i];
+      const x = startX + i * (CardView.W + gap);
+      this.cardViews.push(new CardView(this, {
+        card, x, y,
+        playerCoins: this.data_.runState.coins,
+        onSelect: () => this.purchase(item),
+      }));
     });
   }
 
-  private renderItemCard(x: number, y: number, w: number, h: number, item: MerchantStockItem): void {
-    const rs = this.data_.runState;
-    const affordable = rs.coins >= item.costCoins;
-
-    // Card fill + stroke shift on affordability so the player sees at a
-    // glance what they can buy.
-    const fill = affordable ? 0x0a4052 : 0x1a2026;
-    const strokeColor = affordable ? 0xc79448 : 0x3a4448;
-    const card = this.add.rectangle(x, y, w, h, fill).setOrigin(0, 0);
-    card.setStrokeStyle(3, strokeColor);
-    card.setAlpha(affordable ? 1 : 0.55);
-    this.cards.push(card);
-
-    const titleColor = affordable ? '#e0b063' : '#707a80';
-    const bodyColor = affordable ? '#cce4ea' : '#8090a0';
-    const priceColor = affordable ? '#ffd85a' : '#ff8888';
-
-    this.labels.push(
-      this.add.text(x + 20, y + 16, item.label, {
-        fontFamily: 'Palatino, Georgia, serif',
-        fontSize: '28px',
-        color: titleColor,
-        wordWrap: { width: w - 40 },
-      }),
-    );
-    this.labels.push(
-      this.add.text(x + 20, y + 60, item.detail, {
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: '16px',
-        color: bodyColor,
-        wordWrap: { width: w - 40 },
-      }),
-    );
-    this.labels.push(
-      this.add.text(x + 20, y + h - 40, `🪙 ${item.costCoins}`, {
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: '24px',
-        color: priceColor,
-      }),
-    );
-    // "AFFORDABLE" / "CANNOT AFFORD" chip in top-right.
-    this.labels.push(
-      this.add.text(x + w - 20, y + 16, affordable ? '✓ OK' : '✗ NEED MORE', {
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: '14px',
-        color: affordable ? '#8fce5a' : '#ff6a6a',
-      }).setOrigin(1, 0),
-    );
-
-    card.setInteractive({ useHandCursor: affordable });
-    if (affordable) {
-      card.on('pointerover', () => card.setFillStyle(0x164a5a));
-      card.on('pointerout', () => card.setFillStyle(fill));
+  /**
+   * Translate a legacy `MerchantStockItem` (from `systems/merchant.ts`)
+   * into a `Card`. Element + atk/def metadata pulled from the per-kind
+   * data shims in `data/weapon-cards.ts` + `data/passive-cards.ts`.
+   */
+  private itemToCard(item: MerchantStockItem): Card {
+    let element: CardElement = 'physical';
+    let attack: number | undefined;
+    let defense: number | undefined;
+    let level: 1 | 2 | 3 | 4 | 5 = 1;
+    let iconKey: string | undefined;
+    if (item.kind === 'weapon') {
+      const meta = WEAPON_CARDS[item.id];
+      if (meta) { element = meta.element; attack = meta.attack; defense = meta.defense; }
+      iconKey = `sprite-icon-${item.id}`;
+      level = (this.data_.runState.weaponLevel(item.id) + 1) as 1 | 2 | 3 | 4 | 5;
+      if (level < 1) level = 1; if (level > 5) level = 5;
+    } else if (item.kind === 'passive') {
+      const meta = PASSIVE_CARDS[item.id];
+      if (meta) { element = meta.element; attack = meta.attack; defense = meta.defense; }
+      iconKey = `sprite-icon-${item.id}`;
+      level = (this.data_.runState.passiveLevel(item.id) + 1) as 1 | 2 | 3 | 4 | 5;
+      if (level < 1) level = 1; if (level > 5) level = 5;
+    } else if (item.kind === 'heal') {
+      element = 'arcane'; defense = 3;
+    } else if (item.kind === 'stat') {
+      element = 'physical'; attack = 1;
     }
-    card.on('pointerdown', () => {
-      if (rs.coins < item.costCoins) return;
-      if (!item.apply()) return;
-      rs.spendCoins(item.costCoins);
-      const stageScene = this.scene.get('StageScene') as
-        | (Phaser.Scene & { achievements?: { notifyMerchantPurchase?: () => void } })
-        | undefined;
-      stageScene?.achievements?.notifyMerchantPurchase?.();
-      this.data_.stock = this.data_.stock.filter((s) => s !== item);
-      this.renderStock();
-      this.updateCoinLabel();
-    });
+    return {
+      id: `merchant:${item.id}`,
+      kind: item.kind,
+      title: item.label,
+      detail: item.detail,
+      stats: { attack, defense, element, level },
+      costCoins: item.costCoins,
+      iconKey,
+      apply: () => item.apply(),
+    };
+  }
+
+  private purchase(item: MerchantStockItem): boolean {
+    const rs = this.data_.runState;
+    if (rs.coins < item.costCoins) return false;
+    if (!item.apply()) return false;
+    rs.spendCoins(item.costCoins);
+    const stageScene = this.scene.get('StageScene') as
+      | (Phaser.Scene & { achievements?: { notifyMerchantPurchase?: () => void } })
+      | undefined;
+    stageScene?.achievements?.notifyMerchantPurchase?.();
+    this.data_.stock = this.data_.stock.filter((s) => s !== item);
+    this.renderStock();
+    this.updateCoinLabel();
+    return true;
+  }
+
+  private attemptReroll(): void {
+    const rs = this.data_.runState;
+    const rerollCost = Math.max(5, Math.floor(15 * (1 - this.data_.rerollCostReduction)));
+    if (rs.coins < rerollCost) return;
+    rs.addCoins(-rerollCost);
+    this.data_.stock = this.data_.makeStock();
+    this.renderStock();
+    this.updateCoinLabel();
+  }
+
+  private exit(): void {
+    this.data_.onClose();
+    this.scene.stop();
+    this.scene.resume(this.data_.stageKey);
   }
 
   private updateCoinLabel(): void {
-    const label = this.children.getByName('coin-label') as Phaser.GameObjects.Text | null;
-    label?.setText(`Coins: 🪙 ${this.data_.runState.coins}`);
+    this.coinLabel.setText(`Coins: 🪙 ${this.data_.runState.coins}`);
   }
 
   private renderControls(): void {
     const W = this.scale.width;
     const H = this.scale.height;
     const rerollCost = Math.max(5, Math.floor(15 * (1 - this.data_.rerollCostReduction)));
-    const rerollBtn = this.add.rectangle(W / 2 - 150, H * 0.85, 240, 60, 0x264a5a).setOrigin(0.5, 0.5);
+    const rerollBtn = this.add.rectangle(W / 2 - 150, H * 0.88, 240, 56, 0x264a5a).setOrigin(0.5, 0.5);
     rerollBtn.setStrokeStyle(2, 0x99c9d6);
-    this.add.text(W / 2 - 150, H * 0.85, `Reroll 🪙 ${rerollCost}`, {
+    this.add.text(W / 2 - 150, H * 0.88, `[T] Reroll 🪙 ${rerollCost}`, {
       fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '22px',
+      fontSize: '20px',
       color: '#cce4ea',
+      resolution: Math.max(2, window.devicePixelRatio || 1),
     }).setOrigin(0.5, 0.5);
     rerollBtn.setInteractive({ useHandCursor: true });
-    rerollBtn.on('pointerdown', () => {
-      const rs = this.data_.runState;
-      if (rs.coins < rerollCost) return;
-      rs.addCoins(-rerollCost);
-      this.data_.stock = this.data_.makeStock();
-      this.renderStock();
-      this.updateCoinLabel();
-    });
+    rerollBtn.on('pointerdown', () => this.attemptReroll());
 
-    const setSail = this.add.rectangle(W / 2 + 150, H * 0.85, 240, 60, 0x3a5a24).setOrigin(0.5, 0.5);
+    const setSail = this.add.rectangle(W / 2 + 150, H * 0.88, 240, 56, 0x3a5a24).setOrigin(0.5, 0.5);
     setSail.setStrokeStyle(2, 0x8fce5a);
-    this.add.text(W / 2 + 150, H * 0.85, 'Set Sail ➜', {
+    this.add.text(W / 2 + 150, H * 0.88, '[Enter] Set Sail ➜', {
       fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '22px',
+      fontSize: '20px',
       color: '#cce4ea',
+      resolution: Math.max(2, window.devicePixelRatio || 1),
     }).setOrigin(0.5, 0.5);
     setSail.setInteractive({ useHandCursor: true });
-    setSail.on('pointerdown', () => {
-      this.data_.onClose();
-      this.scene.stop();
-      this.scene.resume(this.data_.stageKey);
-    });
+    setSail.on('pointerdown', () => this.exit());
   }
 }

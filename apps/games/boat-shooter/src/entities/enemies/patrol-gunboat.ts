@@ -1,32 +1,19 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { fanSpread, leadAimAngle } from '../../systems/firing-patterns';
 import { chargeUp } from '../../systems/enemy-attack-fx';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * N2 Patrol Gunboat — ranged backbone; matches player's Y to broadside perpendicular.
  */
-export const PATROL_GUNBOAT_SPEC: EnemySpec = {
-  id: 'patrol-gunboat',
-  maxHp: 6,
-  armor: 1,
-  speed: 120,
-  contactDamage: 2,
-  collisionRadius: 34,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 0, gemChance: 0.05, xpOrbs: 1 },
-  color: 0x3a4d6a,
-  visualRadius: 30,
-  element: 'physical',
-  showAimReticle: true,
-  deathStyle: 'chain',  // magazine cookoff — 3-beat cascade bow to stern
-};
 
 export class PatrolGunboat extends Enemy {
   private fireTimerMs = 2000 + Math.random() * 1000;
   private pendingFire: { ang: number } | null = null;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, PATROL_GUNBOAT_SPEC, x, y);
+    super(scene, getEnemySpec('patrol-gunboat'), x, y);
   }
 
   /** Per-instance variant: 0 = Navy blue (default), 1 = weathered slate,

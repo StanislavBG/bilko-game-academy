@@ -1,28 +1,17 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * P4 Powder-Keg Kamikaze — suicide bomber. Fuse at HP <50% or within 80px; 1.5s delay then big AoE.
  */
-export const POWDER_KEG_KAMIKAZE_SPEC: EnemySpec = {
-  id: 'powder-keg-kamikaze',
-  maxHp: 4,
-  armor: 0,
-  speed: 160,
-  contactDamage: 6,
-  collisionRadius: 22,
-  drops: { coinsSmall: 0, coinsMedium: 3, coinsLarge: 0, gemChance: 0, xpOrbs: 1 },
-  color: 0xff3a0a,
-  visualRadius: 20,
-  deathStyle: 'cookoff', // detonation — huge central blast + smoke column
-};
 
 export class PowderKegKamikaze extends Enemy {
   private ignited = false;
   private fuseExpiresAtMs = 0;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, POWDER_KEG_KAMIKAZE_SPEC, x, y);
+    super(scene, getEnemySpec('powder-keg-kamikaze'), x, y);
   }
 
   protected override drawVisual(): void {

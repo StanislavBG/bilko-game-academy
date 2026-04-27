@@ -1,5 +1,6 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * S1 Ghost Ship — phasing ranged attacker.
@@ -8,19 +9,6 @@ import type { StageScene } from '../../scenes/stage-scene';
  *   - Takes ×2 lightning (handled in ChainLightning via 'wet' reaction; here we treat
  *     vulnerability abstractly since ghosts don't become Wet).
  */
-export const GHOST_SHIP_SPEC: EnemySpec = {
-  id: 'ghost-ship',
-  maxHp: 8,
-  armor: 2,
-  speed: 100,
-  contactDamage: 2,
-  collisionRadius: 30,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 0, gemChance: 0.08, xpOrbs: 1 },
-  color: 0x8abbff,
-  visualRadius: 28,
-  element: 'shadow',
-  deathStyle: 'dissolve', // ghost fades into rising cyan wisps
-};
 
 export class GhostShip extends Enemy {
   private phaseStartMs = 0;
@@ -29,7 +17,7 @@ export class GhostShip extends Enemy {
   private fireTimerMs = 1500;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, GHOST_SHIP_SPEC, x, y);
+    super(scene, getEnemySpec('ghost-ship'), x, y);
   }
 
   protected override drawVisual(): void {

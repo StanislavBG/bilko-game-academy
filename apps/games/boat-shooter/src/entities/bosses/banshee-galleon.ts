@@ -1,26 +1,16 @@
 import { ShipwrightChest } from '../../systems/evolution-chest';
 import Phaser from 'phaser';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * S5 The Banshee Galleon — "Wailing Verity". Stage 12 mini-boss.
  * Drifts through walls (not relevant — no walls), wails, summons Cursed Swarm,
  * phases intangibility in P2.
  */
-export const BANSHEE_GALLEON_SPEC: EnemySpec = {
-  id: 'banshee-galleon',
-  maxHp: 120,
-  armor: 5,
-  speed: 70,
-  contactDamage: 4,
-  collisionRadius: 54,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 8, gemChance: 1.0, xpOrbs: 5 },
-  color: 0xc8a8ff,
-  visualRadius: 50,
-};
 
 export class BansheeGalleon extends Enemy {
   private phase: 1 | 2 | 3 = 1;
@@ -33,7 +23,7 @@ export class BansheeGalleon extends Enemy {
   private intangibilityMs = 4000;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, BANSHEE_GALLEON_SPEC, x, y);
+    super(scene, getEnemySpec('banshee-galleon'), x, y);
     this.banner = new BossBanner(scene, "Wailing Verity — Banshee Galleon", () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase('Phase 1: The Approach');
     this.banner.redraw();

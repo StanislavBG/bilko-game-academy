@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "passives": [
+    {
+      "id": "crows-nest",
+      "displayName": "Crow's Nest",
+      "taglineShort": "+10/18/25/32/40% damage (all weapons).",
+      "element": "none",
+      "defenseTier": 1
+    },
+    {
+      "id": "copper-hull",
+      "displayName": "Copper Hull",
+      "taglineShort": "-1/-1/-1/-2/-2 dmg taken; +0.1..+0.5s iframe.",
+      "element": "none",
+      "defenseTier": 5,
+      "curves": {
+        "maxHpBonus": [0, 1, 1, 1, 2, 2]
+      }
+    },
+    {
+      "id": "storm-compass",
+      "displayName": "Storm Compass",
+      "taglineShort": "+15/25/35/50/65% lightning dmg; +chains.",
+      "element": "storm",
+      "defenseTier": 2
+    },
+    {
+      "id": "powder-barrel",
+      "displayName": "Powder Barrel",
+      "taglineShort": "+15/25/35/50/65% explosive dmg; +radius.",
+      "element": "earth",
+      "defenseTier": 2,
+      "curves": {
+        "radiusPercent": [0, 0.10, 0.15, 0.20, 0.25, 0.35]
+      }
+    },
+    {
+      "id": "first-mate",
+      "displayName": "First Mate",
+      "taglineShort": "-8/-14/-20/-28/-38% cooldown.",
+      "element": "none",
+      "defenseTier": 2,
+      "curves": {
+        "cooldownReduction": [0, 0.08, 0.14, 0.20, 0.28, 0.38]
+      }
+    },
+    {
+      "id": "cargo-nets",
+      "displayName": "Cargo Nets",
+      "taglineShort": "+30..120% magnet; +10..50% coin value.",
+      "element": "none",
+      "defenseTier": 2,
+      "curves": {
+        "magnetBonus": [0, 0.75, 1.25, 1.75, 2.50, 3.00],
+        "coinValueBonus": [0, 0.10, 0.15, 0.25, 0.35, 0.50]
+      }
+    },
+    {
+      "id": "spyglass",
+      "displayName": "Spyglass",
+      "taglineShort": "+10..50% crit chance; +20..100% crit mult.",
+      "element": "none",
+      "defenseTier": 2,
+      "curves": {
+        "critChanceBonus": [0, 0.10, 0.18, 0.25, 0.35, 0.50],
+        "critMultBonus": [0, 0.20, 0.35, 0.50, 0.75, 1.00]
+      }
+    },
+    {
+      "id": "admirals-flag",
+      "displayName": "Admiral's Flag",
+      "taglineShort": "+15..75% XP; -10..50% reroll cost.",
+      "element": "none",
+      "defenseTier": 1,
+      "curves": {
+        "xpPercent": [0, 0.15, 0.25, 0.40, 0.55, 0.75]
+      }
+    }
+  ]
+}

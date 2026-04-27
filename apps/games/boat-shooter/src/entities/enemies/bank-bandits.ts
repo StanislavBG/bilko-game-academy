@@ -1,22 +1,12 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { WORLD_HEIGHT } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * Env1 Bank Bandits — low-threat bank-dwellers. Like Bank Sniper Tower but
  * weaker + cheaper; throws axes + occasional musket shots.
  */
-export const BANK_BANDITS_SPEC: EnemySpec = {
-  id: 'bank-bandits',
-  maxHp: 4,
-  armor: 1,
-  speed: 0,
-  contactDamage: 0,
-  collisionRadius: 22,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 0, gemChance: 0.05, xpOrbs: 1 },
-  color: 0x8b5a3a,
-  visualRadius: 20,
-};
 
 export class BankBandits extends Enemy {
   private axeTimerMs = 3000;
@@ -24,7 +14,7 @@ export class BankBandits extends Enemy {
   private duckUntilMs = 0;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, BANK_BANDITS_SPEC, x, y);
+    super(scene, getEnemySpec('bank-bandits'), x, y);
   }
 
   protected override drawVisual(): void {

@@ -1,28 +1,18 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * P3 Grappling Boarders — attach-and-drain harasser. Within 30px, attaches; deals DoT + slows
  * player while attached. Represented simply: chase to touch, then apply DoT while alive and
  * within range.
  */
-export const GRAPPLING_BOARDERS_SPEC: EnemySpec = {
-  id: 'grappling-boarders',
-  maxHp: 5,
-  armor: 0,
-  speed: 200,
-  contactDamage: 1,
-  collisionRadius: 20,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 0, gemChance: 0, xpOrbs: 1 },
-  color: 0x8b2a2a,
-  visualRadius: 18,
-};
 
 export class GrapplingBoarders extends Enemy {
   private dotAccumMs = 0;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, GRAPPLING_BOARDERS_SPEC, x, y);
+    super(scene, getEnemySpec('grappling-boarders'), x, y);
   }
 
   protected override drawVisual(): void {

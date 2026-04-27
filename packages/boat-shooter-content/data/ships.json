@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "ships": [
+    {
+      "id": "ember-corsair",
+      "displayName": "The Ember Corsair",
+      "element": "fire",
+      "tagline": "They burned three ships of the line and left the water boiling.",
+      "starterWeapon": "flamethrower",
+      "starterPassive": "crows-nest",
+      "baselineDelta": {
+        "maxHp": -1
+      },
+      "skillTreeId": "ember-pyre",
+      "unlockedFromMeta": []
+    },
+    {
+      "id": "tempest-fury",
+      "displayName": "The Tempest Fury",
+      "element": "storm",
+      "tagline": "The storm follows her like a stray dog.",
+      "starterWeapon": "chain-lightning",
+      "starterPassive": "storm-compass",
+      "baselineDelta": {
+        "speed": 20,
+        "critChance": 0.05
+      },
+      "skillTreeId": "tempest-gale",
+      "unlockedFromMeta": []
+    },
+    {
+      "id": "frostbound",
+      "displayName": "The Frostbound",
+      "element": "frost",
+      "tagline": "Her cannons never fired hot iron. Only cold iron. Colder.",
+      "starterWeapon": "mortar",
+      "starterPassive": "copper-hull",
+      "baselineDelta": {
+        "maxHp": 2,
+        "speed": -20
+      },
+      "skillTreeId": "frostbound-rime",
+      "unlockedFromMeta": []
+    },
+    {
+      "id": "verdant-tide",
+      "displayName": "The Verdant Tide",
+      "element": "earth",
+      "tagline": "She was born in a swamp and speaks the language of roots.",
+      "starterWeapon": "harpoon",
+      "starterPassive": "spyglass",
+      "baselineDelta": {
+        "magnetRadius": 20
+      },
+      "skillTreeId": "verdant-grove",
+      "unlockedFromMeta": []
+    },
+    {
+      "id": "nightwake",
+      "displayName": "The Nightwake",
+      "element": "shadow",
+      "tagline": "They never found her crew. Only the lanterns. Still lit.",
+      "starterWeapon": "ghost-crew",
+      "starterPassive": "admirals-flag",
+      "baselineDelta": {
+        "maxHp": -1,
+        "critMultiplier": 0.25
+      },
+      "skillTreeId": "nightwake-shade",
+      "unlockedFromMeta": []
+    }
+  ]
+}

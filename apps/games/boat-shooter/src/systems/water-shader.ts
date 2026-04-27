@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { EnvironmentSpec } from '@bilko/boat-shooter-schema';
 import type { StageScene } from '../scenes/stage-scene';
 import { WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 
@@ -78,6 +79,28 @@ export class WaterShader {
     this.sprite.setTexture(key);
     const t = TINTS[biome];
     this.overlay.setFillStyle(t.tint, 1 - t.alpha);
+  }
+
+  /**
+   * Data-driven path: bake / activate a water variant from an EnvironmentSpec.
+   * The env's `waterPaletteHex` array is mapped into the same WaterTint shape
+   * (bg/hi/mid/caustic/tint), reusing the bake routine so admin edits to the
+   * env JSON yield a brand-new water texture without code changes.
+   *
+   * Texture key is namespaced `water-env-<id>` to avoid collisions with the
+   * legacy biome-keyed bakes. If the schema's biome maps cleanly onto the
+   * legacy WaterBiome union we still record that mapping in `this.biome`
+   * so consumers like `currentBiome()` keep returning a meaningful tag.
+   */
+  setEnvironment(env: EnvironmentSpec): void {
+    const tint = tintFromEnv(env);
+    const key = `water-env-${env.id}`;
+    if (!this.scene.textures.exists(key)) {
+      this.generateWaterTexture(key, tint);
+    }
+    this.sprite.setTexture(key);
+    this.overlay.setFillStyle(tint.tint, 1 - tint.alpha);
+    this.biome = mapEnvBiomeToWaterBiome(env);
   }
 
   /** Scroll the water each frame; called by StageScene. */
@@ -232,6 +255,54 @@ export class WaterShader {
 
     this.scene.textures.addCanvas(key, canvas);
   }
+}
+
+/**
+ * Map an EnvironmentSpec.biome (schema's wider union) onto the legacy
+ * WaterBiome union so consumers like `currentBiome()` keep returning a
+ * meaningful tag for code that still branches on biome.
+ */
+function mapEnvBiomeToWaterBiome(env: EnvironmentSpec): WaterBiome {
+  switch (env.biome) {
+    case 'rivermouth': return 'rivermouth';
+    case 'inland':     return 'channels';
+    case 'delta':
+    case 'open-sea':   return 'open-sea';
+    case 'cursed':     return 'night';
+    case 'volcanic':   return 'volcanic';
+    case 'frozen':
+    case 'storm':      return 'fog';
+    default:           return 'sunlit';
+  }
+}
+
+/**
+ * Build a WaterTint from the env's hex palette. Index layout:
+ *   [0] bg, [1] hi, [2] mid, [3] caustic, [4] tint
+ * Shorter arrays cycle (bg→hi→mid→caustic→tint) so an admin can ship a
+ * 3-color env and still get a sensible bake. Alpha 1.0 for clear/clean
+ * biomes, lower for foggy/night to keep the multiply overlay subtle.
+ */
+function tintFromEnv(env: EnvironmentSpec): WaterTint {
+  const pal = env.waterPaletteHex;
+  const at = (i: number): number => parseHexColor(pal[i % Math.max(1, pal.length)] ?? '#0a5a7a');
+  const alpha =
+    env.biome === 'cursed' || env.biome === 'storm' ? 0.92 :
+    env.biome === 'volcanic' ? 0.95 :
+    env.fogOpacity > 0.4 ? 0.95 : 1.0;
+  return {
+    bg: at(0),
+    hi: at(1),
+    mid: at(2),
+    caustic: at(3),
+    tint: at(4),
+    alpha,
+  };
+}
+
+function parseHexColor(s: string): number {
+  const cleaned = s.startsWith('#') ? s.slice(1) : s;
+  return parseInt(cleaned, 16);
 }
 
 function toHexStr(hex: number): string {

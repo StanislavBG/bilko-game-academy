@@ -1,5 +1,28 @@
+import type { PassiveId } from '@bilko/boat-shooter-schema';
 import { RunState } from '../run-state';
 import { PASSIVE_TIERS } from '../weapons/passive-catalog';
+import { getPassiveSpec } from '../content/active-pack';
+
+/**
+ * Admin-tunable curve reader. The runtime keeps both paths live so the
+ * curve becomes data-driven only when the active pack ships it; bundled
+ * defaults that haven't migrated to JSON still flow through PASSIVE_TIERS.
+ *
+ * Complexity O(1) given memoization isn't needed at this call frequency —
+ * `getPassiveSpec` is an O(n≤8) array scan, called per per-frame consumer.
+ */
+function passiveCurveAt(
+  id: PassiveId,
+  curveKey: string,
+  level: number,
+  fallback: number,
+): number {
+  const spec = getPassiveSpec(id);
+  const curves = spec?.curves as Record<string, readonly number[]> | undefined;
+  const arr = curves?.[curveKey];
+  if (!arr) return fallback;
+  return arr[level] ?? fallback;
+}
 
 /**
  * Damage calculation.
@@ -38,8 +61,10 @@ export function rollDamage(
 
   // Spyglass contributes to crit chance + multiplier.
   const spLvl = state.passiveLevel('spyglass');
-  const spChanceBonus = PASSIVE_TIERS['spyglass'].critChanceBonus[spLvl] ?? 0;
-  const spMultBonus = PASSIVE_TIERS['spyglass'].critMultBonus[spLvl] ?? 0;
+  const spChanceFallback = PASSIVE_TIERS['spyglass'].critChanceBonus[spLvl] ?? 0;
+  const spMultFallback = PASSIVE_TIERS['spyglass'].critMultBonus[spLvl] ?? 0;
+  const spChanceBonus = passiveCurveAt('spyglass', 'critChanceBonus', spLvl, spChanceFallback);
+  const spMultBonus = passiveCurveAt('spyglass', 'critMultBonus', spLvl, spMultFallback);
 
   const critChance = state.critChance + spChanceBonus;
   const critMult = state.critMultiplier + spMultBonus;
@@ -97,7 +122,8 @@ export function applyArmor(
 /** Cooldown scalar from First Mate + future meta. CDR uncapped per design. */
 export function cooldownScalar(state: RunState): number {
   const fmLvl = state.passiveLevel('first-mate');
-  const cdr = PASSIVE_TIERS['first-mate'].cooldownReduction[fmLvl] ?? 0;
+  const fallback = PASSIVE_TIERS['first-mate'].cooldownReduction[fmLvl] ?? 0;
+  const cdr = passiveCurveAt('first-mate', 'cooldownReduction', fmLvl, fallback);
   return Math.max(0.05, 1 - cdr);
 }
 
@@ -122,25 +148,29 @@ export function copperHullNegateChance(state: RunState): number {
 /** Magnet bonus from Cargo Nets. */
 export function cargoNetsMagnetMultiplier(state: RunState): number {
   const cnLvl = state.passiveLevel('cargo-nets');
-  return 1 + (PASSIVE_TIERS['cargo-nets'].magnetBonus[cnLvl] ?? 0);
+  const fallback = PASSIVE_TIERS['cargo-nets'].magnetBonus[cnLvl] ?? 0;
+  return 1 + passiveCurveAt('cargo-nets', 'magnetBonus', cnLvl, fallback);
 }
 
 /** Coin value bonus from Cargo Nets. */
 export function cargoNetsCoinBonus(state: RunState): number {
   const cnLvl = state.passiveLevel('cargo-nets');
-  return 1 + (PASSIVE_TIERS['cargo-nets'].coinValueBonus[cnLvl] ?? 0);
+  const fallback = PASSIVE_TIERS['cargo-nets'].coinValueBonus[cnLvl] ?? 0;
+  return 1 + passiveCurveAt('cargo-nets', 'coinValueBonus', cnLvl, fallback);
 }
 
 /** XP bonus from Admiral's Flag. */
 export function admiralsFlagXpBonus(state: RunState): number {
   const afLvl = state.passiveLevel('admirals-flag');
-  return 1 + (PASSIVE_TIERS['admirals-flag'].xpPercent[afLvl] ?? 0);
+  const fallback = PASSIVE_TIERS['admirals-flag'].xpPercent[afLvl] ?? 0;
+  return 1 + passiveCurveAt('admirals-flag', 'xpPercent', afLvl, fallback);
 }
 
 /** Reroll cost reduction from Admiral's Flag. */
 export function admiralsFlagRerollReduction(state: RunState): number {
   const afLvl = state.passiveLevel('admirals-flag');
-  return PASSIVE_TIERS['admirals-flag'].rerollCostReduction[afLvl] ?? 0;
+  const fallback = PASSIVE_TIERS['admirals-flag'].rerollCostReduction[afLvl] ?? 0;
+  return passiveCurveAt('admirals-flag', 'rerollCostReduction', afLvl, fallback);
 }
 
 /** Bonus chain targets for Chain Lightning from Storm Compass. */

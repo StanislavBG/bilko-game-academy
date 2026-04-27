@@ -1,29 +1,18 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * S2 Sea Serpent — multi-segment weaving threat. For P2 we model as single enemy
  * with wider collision. Full segment-by-segment dismemberment is P3+ polish.
  */
-export const SEA_SERPENT_SPEC: EnemySpec = {
-  id: 'sea-serpent',
-  maxHp: 18,
-  armor: 1,
-  speed: 140,
-  contactDamage: 3,
-  collisionRadius: 40,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 1, gemChance: 0.1, xpOrbs: 3 },
-  color: 0x2a7a4a,
-  visualRadius: 38,
-  deathStyle: 'splash', // serpent collapses — heavy water splash ring
-};
 
 export class SeaSerpent extends Enemy {
   private phase = 0;
   private spitTimerMs = 3000;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, SEA_SERPENT_SPEC, x, y);
+    super(scene, getEnemySpec('sea-serpent'), x, y);
   }
 
   protected override drawVisual(): void {

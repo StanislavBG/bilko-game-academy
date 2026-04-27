@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "environments": [
+    {
+      "id": "env-rivermouth",
+      "name": "Rivermouth",
+      "biome": "rivermouth",
+      "waterPaletteHex": ["#2a5a4a", "#4a8060", "#3a6a50", "#c0e090", "#e8f0c8"],
+      "weather": "clear",
+      "fogOpacity": 0.0,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "rivermouth-theme",
+      "sceneryProps": [
+        "scenery-reed-clump",
+        "scenery-grass-tuft",
+        "scenery-lily-leaf",
+        "scenery-river-log",
+        "scenery-mud-bar",
+        "scenery-stone-marker",
+        "scenery-water-pad",
+        "scenery-cattail",
+        "scenery-bullrush",
+        "scenery-frog-trio",
+        "scenery-turtle",
+        "scenery-fish-school",
+        "scenery-fish-large",
+        "scenery-fish-koi-trio",
+        "scenery-fish-bass-trio"
+      ]
+    },
+    {
+      "id": "env-inland-channels",
+      "name": "Inland Channels",
+      "biome": "inland",
+      "waterPaletteHex": ["#0e506a", "#1a7090", "#0e5e78", "#9ae0ff", "#e8f6ff"],
+      "weather": "clear",
+      "fogOpacity": 0.0,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "channels-theme",
+      "sceneryProps": [
+        "scenery-mangrove-bank",
+        "scenery-mangrove-root",
+        "scenery-dock-plank",
+        "scenery-debris-crate",
+        "scenery-grass-tuft"
+      ]
+    },
+    {
+      "id": "env-delta-fleet",
+      "name": "The Delta Fleet",
+      "biome": "delta",
+      "waterPaletteHex": ["#0a4a78", "#1a709a", "#0a5a88", "#a8f0ff", "#ffffff"],
+      "weather": "clear",
+      "fogOpacity": 0.0,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "delta-theme",
+      "sceneryProps": [
+        "scenery-fleet-silhouette",
+        "scenery-blockade-line",
+        "scenery-wreckage",
+        "scenery-debris-crate"
+      ]
+    },
+    {
+      "id": "env-open-sea",
+      "name": "Open Sea",
+      "biome": "open-sea",
+      "waterPaletteHex": ["#0a4a78", "#1a709a", "#0a5a88", "#a8f0ff", "#ffffff"],
+      "weather": "clear",
+      "fogOpacity": 0.0,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "open-sea-theme",
+      "sceneryProps": [
+        "scenery-fleet-silhouette",
+        "scenery-blockade-line",
+        "scenery-wreckage",
+        "scenery-debris-crate"
+      ]
+    },
+    {
+      "id": "env-cursed-bay",
+      "name": "Cursed Bay",
+      "biome": "cursed",
+      "waterPaletteHex": ["#253540", "#354a58", "#2a3e4a", "#708090", "#bfccd2"],
+      "weather": "fog",
+      "fogOpacity": 0.6,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "cursed-theme",
+      "sceneryProps": [
+        "scenery-wreckage",
+        "scenery-debris-crate",
+        "scenery-fleet-silhouette"
+      ]
+    },
+    {
+      "id": "env-volcanic-reach",
+      "name": "Volcanic Reach",
+      "biome": "volcanic",
+      "waterPaletteHex": ["#1a0a00", "#4a1a00", "#2a0e00", "#ff6a1a", "#ffa068"],
+      "weather": "ash",
+      "fogOpacity": 0.35,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "volcanic-theme",
+      "sceneryProps": [
+        "scenery-wreckage",
+        "scenery-debris-crate"
+      ]
+    },
+    {
+      "id": "env-frozen-strait",
+      "name": "Frozen Strait",
+      "biome": "frozen",
+      "waterPaletteHex": ["#0a1a2a", "#1a2a3a", "#0f2030", "#4a66aa", "#8098c0"],
+      "weather": "snow",
+      "fogOpacity": 0.25,
+      "riverScrollSpeedMul": 1.0,
+      "musicId": "frozen-theme",
+      "sceneryProps": [
+        "scenery-wreckage",
+        "scenery-debris-crate"
+      ]
+    }
+  ]
+}

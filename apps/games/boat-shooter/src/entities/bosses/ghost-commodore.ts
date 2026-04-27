@@ -4,6 +4,7 @@ import { Enemy, type EnemySpec } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * B3 Ghost Commodore — HMS Regret. Stage 8 boss.
@@ -18,17 +19,6 @@ import { WORLD_WIDTH } from '../../constants';
  *   P3: ironclad breaks — commodore spirit free-roams, 20×20 target, 180 px/s,
  *       spectral cannon /0.8s; possession /10s / 2s; cursed swarms /20s.
  */
-export const GHOST_COMMODORE_SPEC: EnemySpec = {
-  id: 'ghost-commodore',
-  maxHp: 250,
-  armor: 5,
-  speed: 85,
-  contactDamage: 4,
-  collisionRadius: 70,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 16, gemChance: 1.0, xpOrbs: 6 },
-  color: 0x6aa8d8,
-  visualRadius: 66,
-};
 
 export class GhostCommodore extends Enemy {
   private phase: 1 | 2 | 3 = 1;
@@ -44,7 +34,7 @@ export class GhostCommodore extends Enemy {
   private possessionAttemptAt = 0;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, GHOST_COMMODORE_SPEC, x, y);
+    super(scene, getEnemySpec('ghost-commodore'), x, y);
     this.banner = new BossBanner(scene, 'HMS Regret — Ghost Commodore', () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase('Phase 1: The Hallowed Deck');
     this.banner.redraw();

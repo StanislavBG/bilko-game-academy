@@ -2,27 +2,26 @@ import Phaser from 'phaser';
 import { RunState } from '../run-state';
 import { allWeapons } from '../weapons/weapon-catalog';
 import { allPassives } from '../weapons/passive-catalog';
-
-type PickKind = 'weapon' | 'passive' | 'heal' | 'stat';
-
-interface Pick {
-  kind: PickKind;
-  id: string;
-  label: string;
-  detail: string;
-  apply: (state: RunState) => void;
-}
+import { CardView } from '../ui/card-view';
+import type { Card } from '../ui/card';
+import { WEAPON_CARDS } from '../data/weapon-cards';
+import { PASSIVE_CARDS } from '../data/passive-cards';
 
 /**
  * Pause overlay shown when the player levels up. Offers 3 picks drawn
  * from: available weapons (can level), available passives (can level),
  * a small stat boost, and a heal. Resumes the stage on selection.
+ *
+ * Cards rendered via the shared `CardView` (PRD 6) — same component
+ * used by MerchantScene + BossSpoilsScene. Hotkeys Q/W/E (PRD 5)
+ * select slots 1/2/3.
  */
 export class LevelUpScene extends Phaser.Scene {
   static readonly KEY = 'LevelUpScene';
 
   private runState!: RunState;
   private stageKey!: string;
+  private cardViews: CardView[] = [];
 
   constructor() {
     super({ key: LevelUpScene.KEY });
@@ -43,144 +42,139 @@ export class LevelUpScene extends Phaser.Scene {
     this.add.rectangle(0, 0, W, H, 0x000000, 0.55).setOrigin(0, 0);
 
     // Title.
-    const title = this.add.text(W / 2, H * 0.2, 'LEVEL UP', {
+    this.add.text(W / 2, H * 0.2, 'LEVEL UP', {
       fontFamily: 'Palatino, Georgia, serif',
       fontSize: '72px',
       color: '#e0b063',
-    });
-    title.setOrigin(0.5, 0.5);
+      resolution: Math.max(2, window.devicePixelRatio || 1),
+    }).setOrigin(0.5, 0.5);
 
-    const subtitle = this.add.text(W / 2, H * 0.2 + 60, `Level ${this.runState.level}`, {
+    this.add.text(W / 2, H * 0.2 + 60, `Level ${this.runState.level}`, {
       fontFamily: 'Inter, system-ui, sans-serif',
       fontSize: '28px',
       color: '#cce4ea',
+      resolution: Math.max(2, window.devicePixelRatio || 1),
+    }).setOrigin(0.5, 0.5);
+
+    // Generate 3 cards via the shared Card system.
+    const cards = this.generateCards(3);
+    const HOTKEYS: Array<'Q' | 'W' | 'E'> = ['Q', 'W', 'E'];
+    cards.forEach((card, i) => {
+      card.hotkey = HOTKEYS[i];
     });
-    subtitle.setOrigin(0.5, 0.5);
 
-    // Generate 3 picks.
-    const picks = this.generatePicks(3);
-
-    const cardW = 420;
-    const cardH = 260;
+    // Layout — 3 cards in a row.
     const gap = 40;
-    const totalW = picks.length * cardW + (picks.length - 1) * gap;
-    const startX = (W - totalW) / 2;
-
-    picks.forEach((pick, i) => {
-      const x = startX + i * (cardW + gap);
-      const y = H * 0.45;
-      this.renderCard(x, y, cardW, cardH, pick);
+    const totalW = cards.length * CardView.W + (cards.length - 1) * gap;
+    const startX = (W - totalW) / 2 + CardView.W / 2;
+    const y = H * 0.55;
+    cards.forEach((card, i) => {
+      const x = startX + i * (CardView.W + gap);
+      this.cardViews.push(new CardView(this, {
+        card, x, y,
+        playerCoins: this.runState.coins,
+        onSelect: (c) => this.commit(c),
+      }));
     });
+
+    // Hotkey input — Q/W/E pick slots 1/2/3.
+    this.input.keyboard?.on('keydown-Q', () => this.cardViews[0]?.trigger());
+    this.input.keyboard?.on('keydown-W', () => this.cardViews[1]?.trigger());
+    this.input.keyboard?.on('keydown-E', () => this.cardViews[2]?.trigger());
+
+    // Footer hint.
+    this.add.text(W / 2, H * 0.92, 'Press Q / W / E or click to choose', {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '15px',
+      color: '#99c9d6',
+      resolution: Math.max(2, window.devicePixelRatio || 1),
+    }).setOrigin(0.5, 0.5);
   }
 
-  private renderCard(x: number, y: number, w: number, h: number, pick: Pick): void {
-    const card = this.add.rectangle(x, y, w, h, 0x0a4052).setOrigin(0, 0);
-    card.setStrokeStyle(3, 0xc79448);
-
-    this.add.text(x + 20, y + 20, pick.label, {
-      fontFamily: 'Palatino, Georgia, serif',
-      fontSize: '32px',
-      color: '#e0b063',
-      wordWrap: { width: w - 40 },
-    });
-
-    this.add.text(x + 20, y + 70, pick.detail, {
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '18px',
-      color: '#cce4ea',
-      wordWrap: { width: w - 40 },
-    });
-
-    const kindColor: Record<PickKind, string> = {
-      weapon: '#c79448',
-      passive: '#3393ac',
-      heal: '#6aa84f',
-      stat: '#99c9d6',
-    };
-    this.add.text(x + 20, y + h - 40, pick.kind.toUpperCase(), {
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '16px',
-      color: kindColor[pick.kind],
-    });
-
-    card.setInteractive({ useHandCursor: true });
-    card.on('pointerover', () => card.setStrokeStyle(4, 0xe0b063));
-    card.on('pointerout', () => card.setStrokeStyle(3, 0xc79448));
-    card.on('pointerdown', () => {
-      pick.apply(this.runState);
-      this.scene.stop();
-      this.scene.resume(this.stageKey);
-    });
+  private commit(card: Card): boolean {
+    card.apply(this.runState);
+    this.scene.stop();
+    this.scene.resume(this.stageKey);
+    return true;
   }
 
-  private generatePicks(n: number): Pick[] {
-    const options: Pick[] = [];
+  private generateCards(n: number): Card[] {
+    const options: Card[] = [];
 
-    // Weapons the player doesn't have (new) or can still level.
+    // Weapons — new or levelable.
     for (const w of allWeapons()) {
       const held = this.runState.weaponLevel(w.id);
+      const meta = WEAPON_CARDS[w.id] ?? { element: 'physical' as const, attack: 4 };
       if (held === 0 && this.runState.weapons.length < 6) {
         options.push({
+          id: `weapon:${w.id}`,
           kind: 'weapon',
-          id: w.id,
-          label: w.displayName,
-          detail: `NEW · ${w.taglineShort}`,
+          title: w.displayName,
+          detail: `NEW · ${meta.detail ?? w.taglineShort}`,
+          stats: { attack: meta.attack, defense: meta.defense, element: meta.element, level: 1 },
+          iconKey: `sprite-icon-${w.id}`,
           apply: (s) => s.addOrLevelWeapon(w.id),
         });
       } else if (held >= 1 && held < 5) {
         options.push({
+          id: `weapon:${w.id}:${held + 1}`,
           kind: 'weapon',
-          id: w.id,
-          label: w.displayName,
-          detail: `LEVEL ${held + 1} · ${w.taglineShort}`,
+          title: w.displayName,
+          detail: `LEVEL ${held + 1} · ${meta.detail ?? w.taglineShort}`,
+          stats: { attack: meta.attack + 1, defense: meta.defense, element: meta.element, level: (held + 1) as 1 | 2 | 3 | 4 | 5 },
+          iconKey: `sprite-icon-${w.id}`,
           apply: (s) => s.addOrLevelWeapon(w.id),
         });
       }
     }
 
-    // Passives — same logic.
+    // Passives — new or levelable.
     for (const p of allPassives()) {
       const held = this.runState.passiveLevel(p.id);
+      const meta = PASSIVE_CARDS[p.id] ?? { element: 'physical' as const, defense: 3 };
       if (held === 0 && this.runState.passives.length < 6) {
         options.push({
+          id: `passive:${p.id}`,
           kind: 'passive',
-          id: p.id,
-          label: p.displayName,
-          detail: `NEW · ${p.taglineShort}`,
+          title: p.displayName,
+          detail: `NEW · ${meta.detail ?? p.taglineShort}`,
+          stats: { attack: meta.attack, defense: meta.defense, element: meta.element, level: 1 },
+          iconKey: `sprite-icon-${p.id}`,
           apply: (s) => s.addOrLevelPassive(p.id),
         });
       } else if (held >= 1 && held < 5) {
         options.push({
+          id: `passive:${p.id}:${held + 1}`,
           kind: 'passive',
-          id: p.id,
-          label: p.displayName,
-          detail: `LEVEL ${held + 1} · ${p.taglineShort}`,
+          title: p.displayName,
+          detail: `LEVEL ${held + 1} · ${meta.detail ?? p.taglineShort}`,
+          stats: { attack: meta.attack, defense: meta.defense + 1, element: meta.element, level: (held + 1) as 1 | 2 | 3 | 4 | 5 },
+          iconKey: `sprite-icon-${p.id}`,
           apply: (s) => s.addOrLevelPassive(p.id),
         });
       }
     }
 
-    // Always include a heal option (if damaged).
+    // Heal — always offered.
     options.push({
-      kind: 'heal',
       id: 'heal-3',
-      label: 'Repair Kit',
-      detail: '+3 HP (capped at max)',
-      apply: (s) => s.heal(3),
+      kind: 'heal',
+      title: 'Repair Kit',
+      detail: '+3 HP (capped at max).',
+      stats: { defense: 3, element: 'arcane', level: 1 },
+      apply: (s) => { s.heal(3); return true; },
     });
 
-    // Small stat boost.
+    // Stat boost.
     options.push({
-      kind: 'stat',
       id: 'stat-damage',
-      label: 'Sharpened Steel',
-      detail: '+1 base damage on all projectiles',
-      apply: (s) => {
-        s.baseDamage += 1;
-      },
+      kind: 'stat',
+      title: 'Sharpened Steel',
+      detail: '+1 base damage on all projectiles.',
+      stats: { attack: 1, element: 'physical', level: 1 },
+      apply: (s) => { s.baseDamage += 1; return true; },
     });
 
-    // Shuffle and take n.
     Phaser.Utils.Array.Shuffle(options);
     return options.slice(0, n);
   }

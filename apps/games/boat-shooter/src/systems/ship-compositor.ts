@@ -1,6 +1,6 @@
 import type { StageScene } from '../scenes/stage-scene';
 import type { ShipId } from '../data/starting-ships';
-import { SHIP_CONFIGS } from '../data/starting-ships';
+import { getShipConfig, getShipConfigs } from '../data/starting-ships';
 
 /**
  * Ship compositor — Path A of the "one-ship sprite" strategy.
@@ -26,7 +26,7 @@ export function ensureShipVariants(scene: StageScene): void {
   const base = scene.textures.get('sprite-player');
   if (!base || base.key === '__MISSING') return;
 
-  for (const id of Object.keys(SHIP_CONFIGS) as ShipId[]) {
+  for (const id of Object.keys(getShipConfigs()) as ShipId[]) {
     const key = `sprite-player-${id}`;
     // If the Gemini pipeline produced a ready-made PNG for this ship,
     // the sprite-loader already registered it and we skip compositing.
@@ -55,7 +55,7 @@ function bakeVariant(scene: StageScene, shipId: ShipId, outKey: string): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  const cfg = SHIP_CONFIGS[shipId];
+  const cfg = getShipConfig(shipId);
 
   // 1. Draw the base ship.
   ctx.drawImage(src as CanvasImageSource, 0, 0);

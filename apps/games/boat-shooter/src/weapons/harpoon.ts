@@ -46,7 +46,8 @@ export class Harpoon extends Weapon {
     dmg: number;
   } {
     switch (lvl) {
-      case 1: return { count: 1, intervalMs: 2500, pierce: 3, dmg: 3 };
+      // PRD 7 buff: 2500→2000ms since elemental is the only starter weapon.
+      case 1: return { count: 1, intervalMs: 2000, pierce: 3, dmg: 3 };
       case 2: return { count: 1, intervalMs: 2000, pierce: 4, dmg: 3 };
       case 3: return { count: 2, intervalMs: 2000, pierce: 4, dmg: 3 };
       case 4: return { count: 2, intervalMs: 1500, pierce: 5, dmg: 3 };

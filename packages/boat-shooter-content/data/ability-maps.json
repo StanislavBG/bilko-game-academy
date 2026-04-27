@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "ships": [
+    { "shipId": "ember-corsair", "allowedWeapons": "*", "allowedPassives": "*" },
+    { "shipId": "tempest-fury",  "allowedWeapons": "*", "allowedPassives": "*" },
+    { "shipId": "frostbound",    "allowedWeapons": "*", "allowedPassives": "*" },
+    { "shipId": "verdant-tide",  "allowedWeapons": "*", "allowedPassives": "*" },
+    { "shipId": "nightwake",     "allowedWeapons": "*", "allowedPassives": "*" }
+  ],
+  "enemies": [
+    { "enemyId": "scout-skiff", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "musket", "bullets": 3, "spreadDeg": 12, "intervalMs": 2400, "damage": 1 }
+    ] },
+    { "enemyId": "patrol-gunboat", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "cannon", "bullets": 5, "spreadDeg": 30, "intervalMs": 2000, "damage": 1 }
+    ] },
+    { "enemyId": "ramming-brigand", "attacks": [] },
+    { "enemyId": "mortar-barge", "attacks": [
+      { "kind": "mortar-arc", "bulletKind": "fire", "intervalMs": 4000, "damage": 2, "aoeRadius": 60, "telegraphMs": 700 }
+    ] },
+    { "enemyId": "bank-sniper-tower", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "sniper", "bullets": 1, "spreadDeg": 0, "intervalMs": 2000, "damage": 2 }
+    ] },
+    { "enemyId": "broadside-cutter", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "musket", "bullets": 7, "spreadDeg": 60, "intervalMs": 2200, "damage": 1 }
+    ] },
+    { "enemyId": "grappling-boarders", "attacks": [] },
+    { "enemyId": "powder-keg-kamikaze", "attacks": [] },
+    { "enemyId": "ghost-ship", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "musket", "bullets": 2, "spreadDeg": 10, "intervalMs": 2500, "damage": 1 }
+    ] },
+    { "enemyId": "sea-serpent", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "venom", "bullets": 1, "spreadDeg": 0, "intervalMs": 4000, "damage": 2 }
+    ] },
+    { "enemyId": "kraken-tentacle", "attacks": [] },
+    { "enemyId": "cursed-swarm", "attacks": [] },
+    { "enemyId": "bank-bandits", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "musket", "bullets": 1, "spreadDeg": 0, "intervalMs": 3000, "damage": 2 },
+      { "kind": "aim-spread", "bulletKind": "musket", "bullets": 1, "spreadDeg": 0, "intervalMs": 5000, "damage": 1 }
+    ] },
+    { "enemyId": "mine-layer", "attacks": [] },
+    { "enemyId": "frigate-captain", "attacks": [
+      { "kind": "aim-spread",  "bulletKind": "cannon", "bullets": 5, "spreadDeg": 28, "intervalMs": 2400, "damage": 2 },
+      { "kind": "aim-spread",  "bulletKind": "sniper", "bullets": 3, "spreadDeg": 16, "intervalMs": 4000, "damage": 2 },
+      { "kind": "mortar-arc",  "bulletKind": "fire",   "intervalMs": 6000, "damage": 4, "aoeRadius": 50, "telegraphMs": 800 },
+      { "kind": "radial-burst","bulletKind": "storm",  "bullets": 16, "intervalMs": 3500, "damage": 2 }
+    ] },
+    { "enemyId": "pirate-champion", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "cannon", "bullets": 5, "spreadDeg": 28, "intervalMs": 3500, "damage": 2 },
+      { "kind": "aim-spread", "bulletKind": "sniper", "bullets": 1, "spreadDeg": 0,  "intervalMs": 2000, "damage": 3 },
+      { "kind": "aim-spread", "bulletKind": "cannon", "bullets": 2, "spreadDeg": 0,  "intervalMs": 12000, "damage": 3 }
+    ] },
+    { "enemyId": "delta-commodore", "attacks": [
+      { "kind": "aim-spread",  "bulletKind": "cannon", "bullets": 7, "spreadDeg": 36, "intervalMs": 3000, "damage": 2 },
+      { "kind": "mortar-arc",  "bulletKind": "fire",   "intervalMs": 7000, "damage": 3, "aoeRadius": 80, "telegraphMs": 1000 },
+      { "kind": "radial-burst","bulletKind": "storm",  "bullets": 4, "intervalMs": 120, "damage": 2 }
+    ] },
+    { "enemyId": "pirate-king", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "cannon", "bullets": 5, "spreadDeg": 28, "intervalMs": 3500, "damage": 2 },
+      { "kind": "aim-spread", "bulletKind": "cannon", "bullets": 2, "spreadDeg": 0,  "intervalMs": 12000, "damage": 3 },
+      { "kind": "aim-spread", "bulletKind": "sniper", "bullets": 1, "spreadDeg": 0,  "intervalMs": 2000, "damage": 3 }
+    ] },
+    { "enemyId": "ghost-commodore", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "shadow", "bullets": 8, "spreadDeg": 46, "intervalMs": 3000, "damage": 2 }
+    ] },
+    { "enemyId": "drowned-admiralty", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "shadow", "bullets": 8, "spreadDeg": 32, "intervalMs": 2500, "damage": 2 }
+    ] },
+    { "enemyId": "obsidian-warlord", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "fire",  "bullets": 4, "spreadDeg": 24, "intervalMs": 3000, "damage": 3 },
+      { "kind": "mortar-arc", "bulletKind": "fire",  "intervalMs": 12000, "damage": 4, "aoeRadius": 80, "telegraphMs": 1000 }
+    ] },
+    { "enemyId": "banshee-galleon", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "shadow", "bullets": 6, "spreadDeg": 34, "intervalMs": 4000, "damage": 2 }
+    ] },
+    { "enemyId": "kraken-ancient", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "frost", "bullets": 1, "spreadDeg": 0, "intervalMs": 5000, "damage": 4 }
+    ] },
+    { "enemyId": "river-fisher-skiff", "attacks": [] },
+    { "enemyId": "river-fisher-trawler", "attacks": [
+      { "kind": "forward-fire", "bulletKind": "musket", "intervalMs": 4500, "damage": 1 }
+    ] },
+    { "enemyId": "river-fisher-junk", "attacks": [
+      { "kind": "aim-spread", "bulletKind": "musket", "bullets": 2, "spreadDeg": 12, "intervalMs": 3500, "damage": 1 }
+    ] },
+    { "enemyId": "river-skiff-bandits", "attacks": [
+      { "kind": "forward-fire", "bulletKind": "musket", "intervalMs": 5000, "damage": 1 }
+    ] },
+    { "enemyId": "tax-collector-barge", "attacks": [
+      { "kind": "forward-fire", "bulletKind": "cannon", "intervalMs": 2500, "damage": 2 }
+    ] },
+    { "enemyId": "floating-mine-cluster", "attacks": [] }
+  ],
+  "evolutions": [
+    { "result": "cannonade-supreme",    "weapon": "bow-cannon",      "passive": "powder-barrel" },
+    { "result": "thunderclap-broadside","weapon": "broadside",       "passive": "first-mate" },
+    { "result": "tempest-cannonade",    "weapon": "chain-lightning", "passive": "storm-compass" },
+    { "result": "inferno-breath",       "weapon": "flamethrower",    "passive": "crows-nest" },
+    { "result": "sawblade-fortress",    "weapon": "spinning-axes",   "passive": "copper-hull" },
+    { "result": "leviathan-ink",        "weapon": "kraken-ink",      "passive": "spyglass" },
+    { "result": "minefield",            "weapon": "stern-mines",     "passive": "cargo-nets" },
+    { "result": "ghost-armada",         "weapon": "ghost-crew",      "passive": "admirals-flag" }
+  ]
+}

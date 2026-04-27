@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { EnvironmentSpec, EnvironmentWeather } from '@bilko/boat-shooter-schema';
 import type { StageScene } from '../scenes/stage-scene';
 import { WORLD_WIDTH, WORLD_HEIGHT } from '../constants';
 import type { WaterBiome } from './water-shader';
@@ -128,6 +129,17 @@ export class WeatherSystem {
     }
   }
 
+  /**
+   * Data-driven path: the env's `weather` kind selects the overlay directly,
+   * with a derived WaterBiome (mapped from env.biome) used as a fallback for
+   * 'clear' so stages still get the appropriate pollen / god-rays / spray
+   * even when the admin hasn't authored an explicit weather kind.
+   */
+  setEnvironment(env: EnvironmentSpec): void {
+    const biome = mapEnvWeatherToBiome(env);
+    this.setBiome(biome);
+  }
+
   clear(): void {
     this.emitters.forEach((e) => e.destroy());
     this.emitters = [];
@@ -191,5 +203,27 @@ export class WeatherSystem {
       g.generateTexture('weather-seabird', 14, 5);
       g.destroy();
     }
+  }
+}
+
+/**
+ * Map an EnvironmentSpec onto the WaterBiome key the weather emitter uses.
+ * Explicit weather kinds win over biome inference so an admin can shove
+ * fog onto a Rivermouth stage by editing JSON.
+ */
+function mapEnvWeatherToBiome(env: EnvironmentSpec): WaterBiome {
+  const w: EnvironmentWeather = env.weather;
+  if (w === 'fog')                   return 'fog';
+  if (w === 'rain' || w === 'storm') return 'fog';
+  if (w === 'ash')                   return 'volcanic';
+  if (w === 'snow')                  return 'fog';
+  switch (env.biome) {
+    case 'rivermouth': return 'rivermouth';
+    case 'inland':     return 'channels';
+    case 'delta':
+    case 'open-sea':   return 'open-sea';
+    case 'cursed':     return 'night';
+    case 'volcanic':   return 'volcanic';
+    default:           return 'sunlit';
   }
 }

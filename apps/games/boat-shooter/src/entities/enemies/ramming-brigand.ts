@@ -1,27 +1,16 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * P1 Ramming Brigand — aggressive melee pressure. Enters "Ram Mode" on line-of-sight.
  */
-export const RAMMING_BRIGAND_SPEC: EnemySpec = {
-  id: 'ramming-brigand',
-  maxHp: 3,
-  armor: 0,
-  speed: 240,
-  contactDamage: 4,
-  collisionRadius: 24,
-  drops: { coinsSmall: 0, coinsMedium: 1, coinsLarge: 0, gemChance: 0, xpOrbs: 1 },
-  color: 0x5a2a2a,
-  visualRadius: 22,
-  deathStyle: 'splinter', // chunks + prow shard fly out
-};
 
 export class RammingBrigand extends Enemy {
   private inRamMode = false;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, RAMMING_BRIGAND_SPEC, x, y);
+    super(scene, getEnemySpec('ramming-brigand'), x, y);
   }
 
   /** Three visual variants: standard, burnt-black, iron-reinforced. */

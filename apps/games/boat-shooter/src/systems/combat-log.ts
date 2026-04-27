@@ -65,6 +65,17 @@ export type CombatLogEntry =
       target: string;
       reaction: CombatReactionId;
       amount: number;
+    }
+  | {
+      kind: 'pickup';
+      time: number;
+      pickup: 'coin' | 'gem' | 'xp';
+      amount: number;
+    }
+  | {
+      kind: 'levelup';
+      time: number;
+      level: number;
     };
 
 export interface CombatLogAggregate {
@@ -160,7 +171,10 @@ export class CombatLog {
         case 'dot':
           dmgDealt += e.amount;
           break;
-        default:
+        case 'status':
+        case 'reaction':
+        case 'pickup':
+        case 'levelup':
           break;
       }
     }

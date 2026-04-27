@@ -178,3 +178,87 @@ export function leadAimAngle(
   const ly = target.y + (target.vy ?? 0) * t;
   return Math.atan2(ly - sourceY, lx - sourceX);
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// PRD 1 — multi-point + spiral helpers for boss attack choreography.
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Run a per-point firing callback at each (dx, dy) offset relative to a
+ * base position. Designed for boss multi-point cannon choreography:
+ *   fireFromPoints(scene, {x: bx, y: by}, [[-50,-10],[50,-10],[0,40]],
+ *     (px, py) => fanSpread(scene, px, py, ang, opt));
+ *
+ * The base position + each offset becomes a (px, py) world coord. The
+ * callback decides what to fire from that point (any pattern). Lets the
+ * caller compose `fanSpread` / `radialBurst` / `spiralShot` from N
+ * cannons without rewriting the loop in every boss class.
+ *
+ * Complexity: O(points). No allocations beyond what the callback does.
+ */
+export function fireFromPoints(
+  base: { x: number; y: number },
+  points: ReadonlyArray<readonly [number, number]>,
+  fire: (px: number, py: number, idx: number) => void,
+): void {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]!;
+    fire(base.x + p[0], base.y + p[1], i);
+  }
+}
+
+export interface ParametricSpiralOptions {
+  /** Bullets per spiral arm. */
+  bulletsPerArm: number;
+  /** Number of arms (4-armed = +-x crossing pattern). */
+  arms: number;
+  /** Starting angle (radians). Caller updates this between bursts to
+   *  rotate the spiral over time. */
+  startAngle: number;
+  /** Angle step between bullets along an arm (radians). */
+  armSpacingRad: number;
+  /** Bullet flight speed. */
+  speed: number;
+  /** Damage per bullet. */
+  damage: number;
+  /** Bullet kind for visual + tint. */
+  bulletKind?: import('../entities/enemy-system').BulletKind;
+  /** Source enemy ID for combat-log attribution. */
+  source?: string;
+}
+
+/**
+ * Fire a parametric spiral — N arms × M bullets, evenly spaced around
+ * a center point and rotated by `startAngle`. Caller holds rotation
+ * seed + steps it between bursts:
+ *
+ *   parametricSpiral(scene, x, y, { bulletsPerArm: 4, arms: 4,
+ *     startAngle: this.spiralPhase, armSpacingRad: 0.18, ... });
+ *   this.spiralPhase += Math.PI / 6;  // 30° rotation per burst
+ *
+ * Visually distinct from `radialBurst` because the bullets along each
+ * arm are staggered, producing a "windmill" effect as the arms rotate.
+ */
+export function parametricSpiral(
+  scene: StageScene,
+  fromX: number,
+  fromY: number,
+  opt: ParametricSpiralOptions,
+): void {
+  const { arms, bulletsPerArm, startAngle, armSpacingRad, speed, damage } = opt;
+  const armStep = (Math.PI * 2) / arms;
+  for (let a = 0; a < arms; a++) {
+    const armBase = startAngle + a * armStep;
+    for (let b = 0; b < bulletsPerArm; b++) {
+      const ang = armBase + b * armSpacingRad;
+      scene.enemies.spawnEnemyBullet(
+        fromX, fromY,
+        Math.cos(ang) * speed,
+        Math.sin(ang) * speed,
+        damage,
+        opt.source,
+        opt.bulletKind,
+      );
+    }
+  }
+}

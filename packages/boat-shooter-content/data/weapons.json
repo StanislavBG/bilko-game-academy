@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "weapons": [
+    {
+      "id": "bow-cannon",
+      "displayName": "Bow Cannon Volley",
+      "taglineShort": "Reliable workhorse. Forward volley.",
+      "element": "physical",
+      "attackTier": 1,
+      "curves": {
+        "damage": [0, 1, 1, 1, 1, 1.25],
+        "fireRateMs": [0, 250, 250, 200, 200, 182],
+        "pierce": [0, 0, 0, 0, 1, 2],
+        "count": [0, 2, 3, 3, 4, 4]
+      }
+    },
+    {
+      "id": "broadside",
+      "displayName": "Broadside Shot",
+      "taglineShort": "Rhythmic BOOM-BOOM salvo from both flanks.",
+      "element": "physical",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 2, 2, 2, 2, 3],
+        "fireRateMs": [0, 4000, 4000, 3000, 3000, 2500],
+        "pierce": [0, 0, 0, 0, 0, 1],
+        "count": [0, 3, 4, 4, 5, 5]
+      }
+    },
+    {
+      "id": "harpoon",
+      "displayName": "Harpoon",
+      "taglineShort": "Slow thunk, massive pierce.",
+      "element": "physical",
+      "attackTier": 2,
+      "curves": {
+        "damage": [0, 3, 3, 3, 3, 4],
+        "fireRateMs": [0, 2000, 2000, 2000, 1500, 1500],
+        "pierce": [0, 3, 4, 4, 5, 6],
+        "count": [0, 1, 1, 2, 2, 3]
+      }
+    },
+    {
+      "id": "chain-lightning",
+      "displayName": "Chain Lightning",
+      "taglineShort": "Zap-zap-zap — chains between clustered enemies.",
+      "element": "storm",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 2, 2, 3, 3, 4],
+        "fireRateMs": [0, 2000, 2000, 2000, 1500, 1000],
+        "count": [0, 1, 2, 3, 4, 5]
+      }
+    },
+    {
+      "id": "flamethrower",
+      "displayName": "Flamethrower",
+      "taglineShort": "Forward cone; melts and burns.",
+      "element": "fire",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 1.25, 1.0, 1.5, 1.5, 2.0],
+        "aoeRadius": [0, 180, 200, 200, 240, 280]
+      }
+    },
+    {
+      "id": "lighthouse-beam",
+      "displayName": "Lighthouse Beam",
+      "taglineShort": "Rotating beam sweeps 360°.",
+      "element": "arcane",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 1, 1, 2, 2, 3]
+      }
+    },
+    {
+      "id": "mortar",
+      "displayName": "Mortar",
+      "taglineShort": "Arc ballistic; big splash.",
+      "element": "earth",
+      "attackTier": 4,
+      "curves": {
+        "damage": [0, 3, 3, 3, 4, 6],
+        "fireRateMs": [0, 2400, 3000, 2500, 2500, 2000],
+        "count": [0, 1, 2, 2, 3, 4],
+        "aoeRadius": [0, 80, 80, 100, 120, 140]
+      }
+    },
+    {
+      "id": "fire-arrow-rain",
+      "displayName": "Fire-Arrow Rain",
+      "taglineShort": "Zone shower ahead; burns + patch.",
+      "element": "fire",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 1, 1, 1, 2, 3],
+        "fireRateMs": [0, 4000, 4000, 3500, 3500, 3000],
+        "count": [0, 6, 8, 10, 12, 16],
+        "aoeRadius": [0, 120, 150, 150, 180, 200]
+      }
+    },
+    {
+      "id": "kraken-ink",
+      "displayName": "Kraken-Ink Cloud",
+      "taglineShort": "Aura trails behind; slows + poisons.",
+      "element": "shadow",
+      "attackTier": 4,
+      "curves": {
+        "damage": [0, 1, 1, 1.5, 1.5, 2],
+        "aoeRadius": [0, 120, 140, 160, 180, 220]
+      }
+    },
+    {
+      "id": "spinning-axes",
+      "displayName": "Spinning Boarding-Axes",
+      "taglineShort": "Orbit melee shield.",
+      "element": "physical",
+      "attackTier": 2,
+      "curves": {
+        "damage": [0, 1, 1, 1, 2, 2],
+        "count": [0, 1, 2, 3, 4, 6],
+        "aoeRadius": [0, 100, 100, 100, 100, 120]
+      }
+    },
+    {
+      "id": "homing-musket",
+      "displayName": "Homing Musket Swarm",
+      "taglineShort": "Burst of seeking shots.",
+      "element": "physical",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 1, 1, 1, 2, 3],
+        "fireRateMs": [0, 3000, 3000, 2500, 2000, 1500],
+        "pierce": [0, 0, 0, 0, 0, 1],
+        "count": [0, 3, 4, 5, 6, 8]
+      }
+    },
+    {
+      "id": "stern-mines",
+      "displayName": "Stern Mines",
+      "taglineShort": "Drop-behind explosive trap.",
+      "element": "earth",
+      "attackTier": 3,
+      "curves": {
+        "damage": [0, 3, 3, 3, 3, 4],
+        "fireRateMs": [0, 2500, 2000, 2000, 1500, 1000],
+        "count": [0, 1, 1, 2, 2, 3],
+        "aoeRadius": [0, 60, 60, 60, 80, 100]
+      }
+    },
+    {
+      "id": "ghost-crew",
+      "displayName": "Ghost-Crew Volley",
+      "taglineShort": "Spectral crew appears, volleys, vanishes.",
+      "element": "shadow",
+      "attackTier": 5,
+      "curves": {
+        "damage": [0, 1, 1, 1, 2, 3],
+        "fireRateMs": [0, 4000, 5000, 4000, 4000, 3000],
+        "count": [0, 2, 3, 3, 4, 5]
+      }
+    }
+  ]
+}

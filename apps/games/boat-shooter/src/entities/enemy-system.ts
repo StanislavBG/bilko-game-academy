@@ -24,6 +24,10 @@ import { DrownedAdmiralty } from './bosses/drowned-admiralty';
 import { ObsidianWarlord } from './bosses/obsidian-warlord';
 import { BansheeGalleon } from './bosses/banshee-galleon';
 import { KrakenAncient } from './bosses/kraken-ancient';
+import { RiverFisher } from './enemies/river-fisher';
+import { RiverSkiffBandits } from './enemies/river-skiff-bandits';
+import { TaxCollectorBarge } from './enemies/tax-collector-barge';
+import { FloatingMineCluster } from './enemies/floating-mine-cluster';
 import { WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 
 export type EnemyType =
@@ -49,7 +53,15 @@ export type EnemyType =
   | 'drowned-admiralty'
   | 'obsidian-warlord'
   | 'banshee-galleon'
-  | 'kraken-ancient';
+  | 'kraken-ancient'
+  // River fishers — easy-kill drifters (slower than river scroll).
+  | 'river-fisher-skiff'
+  | 'river-fisher-trawler'
+  | 'river-fisher-junk'
+  // PRD 4 — pop-fodder + midboss-ish + drifting mine cluster.
+  | 'river-skiff-bandits'
+  | 'tax-collector-barge'
+  | 'floating-mine-cluster';
 
 /**
  * Enemy-bullet damage family — drives which painterly AI sprite renders.
@@ -168,6 +180,14 @@ export class EnemySystem {
       case 'obsidian-warlord': e = new ObsidianWarlord(this.scene, x, y); break;
       case 'banshee-galleon': e = new BansheeGalleon(this.scene, x, y); break;
       case 'kraken-ancient': e = new KrakenAncient(this.scene, x, y); break;
+      // River fisher trio — one class, three specs (saves a switch leg
+      // per variant and keeps the factory composable).
+      case 'river-fisher-skiff':   e = new RiverFisher(this.scene, x, y, 'river-fisher-skiff'); break;
+      case 'river-fisher-trawler': e = new RiverFisher(this.scene, x, y, 'river-fisher-trawler'); break;
+      case 'river-fisher-junk':    e = new RiverFisher(this.scene, x, y, 'river-fisher-junk'); break;
+      case 'river-skiff-bandits':  e = new RiverSkiffBandits(this.scene, x, y); break;
+      case 'tax-collector-barge':  e = new TaxCollectorBarge(this.scene, x, y); break;
+      case 'floating-mine-cluster': e = new FloatingMineCluster(this.scene, x, y); break;
       default: return null;
     }
     this.enemies.push(e);

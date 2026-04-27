@@ -1,32 +1,38 @@
-import { STAGE_1 } from './stage-1';
-import { STAGE_2 } from './stage-2';
-import { STAGE_3 } from './stage-3';
-import { STAGE_4 } from './stage-4';
-import { STAGE_5 } from './stage-5';
-import { STAGE_6 } from './stage-6';
-import { STAGE_7 } from './stage-7';
-import { STAGE_8 } from './stage-8';
-import { STAGE_9 } from './stage-9';
-import { STAGE_10 } from './stage-10';
-import { STAGE_11 } from './stage-11';
-import { STAGE_12 } from './stage-12';
-import { STAGE_13 } from './stage-13';
-import { STAGE_14 } from './stage-14';
-import { STAGE_15 } from './stage-15';
 import type { StageSpec } from '../../systems/wave-spawner';
+import { getActivePack } from '../../content/active-pack';
 
 /**
  * Full 15-stage campaign registry.
+ *
+ * Stages live in the runtime ContentPack (bundled defaults overlaid
+ * with whatever the content server returned at boot). All public
+ * surface here reads through `getActivePack()` so a pack swap at boot
+ * propagates without re-importing modules at consumer sites.
+ *
+ * Lookups are O(n) over the stage list (n=15) — fine for the call
+ * frequencies (scene init, end-of-stage routing). The runtime never
+ * mid-session-mutates the pack, so no cache invalidation is needed
+ * if a hot path emerges later.
  */
-export const STAGES: readonly StageSpec[] = [
-  STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5,
-  STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
-  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15,
-];
 
+/** All stages in campaign order. Reads the active pack each call. */
+export function allStages(): readonly StageSpec[] {
+  return getActivePack().stages as readonly StageSpec[];
+}
+
+/**
+ * Resolve a stage by string id or 1-based integer index. Out-of-range
+ * indices clamp to the campaign bounds; unknown string ids fall back
+ * to the first stage. Mirrors the earlier API so callers don't deal
+ * with optional-undefined.
+ */
 export function stageById(id: string | number): StageSpec {
+  const stages = allStages();
+  const first = stages[0];
+  if (!first) throw new Error('[boat-shooter] active ContentPack has no stages');
   if (typeof id === 'number') {
-    return STAGES[Math.max(0, Math.min(STAGES.length - 1, id - 1))] ?? STAGE_1;
+    const i = Math.max(0, Math.min(stages.length - 1, id - 1));
+    return stages[i] ?? first;
   }
-  return STAGES.find((s) => s.id === id) ?? STAGE_1;
+  return stages.find((s) => s.id === id) ?? first;
 }

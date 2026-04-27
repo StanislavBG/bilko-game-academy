@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { EnemyFormula, StageSpawnMode } from '@bilko/boat-shooter-schema';
 import type { StageScene } from '../scenes/stage-scene';
 import type { Enemy } from '../entities/enemy';
 import type { EnemyType } from '../entities/enemy-system';
@@ -28,24 +29,37 @@ export interface Wave {
   count: number;
   /** Spawn pattern — determines formation. */
   pattern:
-    | 'line'        // evenly spaced horizontal row
-    | 'cluster'     // small randomized clump
-    | 'flank-left'  // pile near left bank
-    | 'flank-right' // pile near right bank
-    | 'v-formation' // arrow pointing down (Raptor staple)
-    | 'echelon'     // diagonal offset line
-    | 'crossfire'   // two flanks converging
+    | 'line'             // evenly spaced horizontal row
+    | 'cluster'          // small randomized clump
+    | 'flank-left'       // pile near left bank
+    | 'flank-right'      // pile near right bank
+    | 'v-formation'      // arrow pointing down (Raptor staple)
+    | 'echelon'          // diagonal offset line
+    | 'crossfire'        // two flanks converging
+    | 'staggered-line'   // PRD 4 — N enemies dropped one per 200 ms across the width
     | 'boss';
 }
 
 export interface StageSpec {
   id: string;
   title: string;
+  /**
+   * Player-facing label like '1-1', '2-3' (act-stage). Doesn't change the
+   * internal `id` — that's hardcoded into 25+ places. Consumed by the HUD
+   * banner / run summary / leaderboard label per PRD 3.
+   */
+  displayCode: string;
   /** Full stage length before boss (seconds of active play). */
   durationSec: number;
   waves: Wave[];
   /** The boss that ends the stage. Spawns after the last wave. */
   boss: SpawnType;
+  /** Optional FK into the environments collection — drives water/weather/scenery. */
+  environmentId?: string;
+  /** Picks `waves` / `formula` / `both`. Defaults to `waves` when absent. */
+  spawnMode?: StageSpawnMode;
+  /** Optional procedural alternative / supplement to `waves`. */
+  enemyFormula?: EnemyFormula;
 }
 
 /**
@@ -69,6 +83,8 @@ export class WaveSpawner {
 
   /** Time (ms) to delay wave spawning at stage start — covers the intro overlay. */
   private introBufferMs = 1500;
+  /** Rolling accumulator for the formula spawner's tick cadence (ms). */
+  private formulaTimerMs = 0;
 
   update(deltaMs: number): void {
     // Once the stage is over, freeze the wave timeline — no new spawns
@@ -80,19 +96,34 @@ export class WaveSpawner {
     }
     this.elapsedSec += deltaMs / 1000;
 
-    // Spawn due waves.
-    while (
-      this.nextWaveIdx < this.spec.waves.length &&
-      this.spec.waves[this.nextWaveIdx]!.at <= this.elapsedSec
-    ) {
-      this.runWave(this.spec.waves[this.nextWaveIdx]!);
-      this.nextWaveIdx += 1;
+    const mode: StageSpawnMode = this.spec.spawnMode ?? 'waves';
+    const runWaves = mode === 'waves' || mode === 'both';
+    const runFormula = (mode === 'formula' || mode === 'both') && this.spec.enemyFormula;
+
+    if (runWaves) {
+      // Spawn due waves.
+      while (
+        this.nextWaveIdx < this.spec.waves.length &&
+        this.spec.waves[this.nextWaveIdx]!.at <= this.elapsedSec
+      ) {
+        this.runWave(this.spec.waves[this.nextWaveIdx]!);
+        this.nextWaveIdx += 1;
+      }
+    }
+
+    if (runFormula) {
+      this.runFormulaTick(deltaMs);
     }
 
     // After all waves and all regular enemies cleared, spawn the boss.
+    // Formula-only stages skip the wave-index gate (there are no waves to
+    // exhaust) but still wait until enemies clear before the boss arrives.
+    const wavesExhausted = !runWaves || this.nextWaveIdx >= this.spec.waves.length;
+    const formulaExhausted = !runFormula || this.elapsedSec >= this.spec.durationSec;
     if (
       !this.bossSpawned &&
-      this.nextWaveIdx >= this.spec.waves.length &&
+      wavesExhausted &&
+      formulaExhausted &&
       this.scene.enemies.count() === 0
     ) {
       this.spawnBoss();
@@ -157,6 +188,17 @@ export class WaveSpawner {
     if (wave.spawn === 'cursed-swarm' && rs.hasWeeklyModifier('triple-swarms')) count *= 3;
     if (wave.spawn === 'powder-keg-kamikaze' && rs.hasWeeklyModifier('double-kamikaze')) count *= 2;
 
+    // PRD 4 — staggered-line drops one per 200 ms across the width.
+    if (wave.pattern === 'staggered-line') {
+      for (let i = 0; i < count; i++) {
+        const x = safeLeft + ((safeRight - safeLeft) * i) / Math.max(1, count - 1);
+        this.scene.time.delayedCall(i * 200, () => {
+          this.scene.enemies.spawn(wave.spawn, Phaser.Math.Clamp(x, safeLeft, safeRight), spawnY);
+        });
+      }
+      return;
+    }
+
     for (let i = 0; i < count; i++) {
       let x = centerX;
       let y = spawnY;
@@ -215,4 +257,75 @@ export class WaveSpawner {
   progress(): number {
     return Math.min(1, this.elapsedSec / this.spec.durationSec);
   }
+
+  /**
+   * Procedural alternative to the explicit wave timeline. Accumulates dt
+   * until at least one tick interval has elapsed, then fires `spawns` enemies
+   * drawn weighted-randomly from the pool. The pool is filtered by each
+   * entry's `[minStartSec, maxStartSec]` window so heavy enemies can be
+   * gated to the back half of the stage.
+   *
+   * Cap at 5 spawns per tick so a misconfigured curve can't flood the
+   * world with enemies.
+   * Complexity: O(spawns × pool.length) per tick — pool ≤ ~6, spawns ≤ 5.
+   */
+  private runFormulaTick(deltaMs: number): void {
+    const formula = this.spec.enemyFormula;
+    if (!formula) return;
+    this.formulaTimerMs += deltaMs;
+    const tickMs = Math.max(50, formula.tickSec * 1000);
+    if (this.formulaTimerMs < tickMs) return;
+    this.formulaTimerMs -= tickMs;
+
+    const spawns = evalFormulaAt(formula, this.elapsedSec, this.spec.durationSec);
+    if (spawns <= 0) return;
+
+    const safeLeft = SAFE_AREA_MARGIN + 40;
+    const safeRight = WORLD_WIDTH - SAFE_AREA_MARGIN - 40;
+    const eligible = formula.pool.filter(
+      (p) =>
+        this.elapsedSec >= (p.minStartSec ?? 0) &&
+        this.elapsedSec <= (p.maxStartSec ?? this.spec.durationSec),
+    );
+    if (eligible.length === 0) return;
+    const totalWeight = eligible.reduce((s, p) => s + Math.max(0, p.weight), 0);
+    if (totalWeight <= 0) return;
+
+    for (let i = 0; i < spawns; i++) {
+      let r = Math.random() * totalWeight;
+      let pick = eligible[0]!;
+      for (const entry of eligible) {
+        r -= Math.max(0, entry.weight);
+        if (r <= 0) { pick = entry; break; }
+      }
+      const x = Phaser.Math.Clamp(
+        safeLeft + Math.random() * (safeRight - safeLeft),
+        safeLeft, safeRight,
+      );
+      this.scene.enemies.spawn(pick.enemyId as EnemyType, x, -80);
+    }
+  }
+}
+
+/**
+ * Pure evaluator — returns the integer spawn count this formula would emit
+ * on a tick at `elapsedSec` of a stage that runs for `durationSec`. Easy to
+ * verify by inspection; isolated from Phaser so unit tests / admin previews
+ * can exercise the curve without booting a scene.
+ *
+ * Curve options:
+ *   - 'linear' lerps `start → end` over t = elapsed/duration (clamped).
+ *   - 'exp'    squares t before lerping, biasing spawns to the back half.
+ * Result is rounded, clamped to [0, 5].
+ */
+export function evalFormulaAt(
+  formula: EnemyFormula,
+  elapsedSec: number,
+  durationSec: number,
+): number {
+  const denom = Math.max(0.001, durationSec);
+  const t = Math.max(0, Math.min(1, elapsedSec / denom));
+  const shaped = formula.intensity.curve === 'exp' ? t * t : t;
+  const raw = formula.intensity.start + (formula.intensity.end - formula.intensity.start) * shaped;
+  return Math.max(0, Math.min(5, Math.round(raw)));
 }

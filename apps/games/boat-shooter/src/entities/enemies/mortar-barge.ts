@@ -1,32 +1,19 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { chargeUp } from '../../systems/enemy-attack-fx';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * N3 Mortar Barge — slow heavy area-denial. Fires lead-aimed mortars with
  * telegraphed landing zones.
  */
-export const MORTAR_BARGE_SPEC: EnemySpec = {
-  id: 'mortar-barge',
-  maxHp: 10,
-  armor: 2,
-  speed: 60,
-  contactDamage: 3,
-  collisionRadius: 38,
-  drops: { coinsSmall: 0, coinsMedium: 1, coinsLarge: 1, gemChance: 0.1, xpOrbs: 2 },
-  color: 0x3a4a3a,
-  visualRadius: 36,
-  deathStyle: 'cookoff', // mortar tube cooks off — central blast + smoke column
-  element: 'fire',
-  showAimReticle: true,
-};
 
 export class MortarBarge extends Enemy {
   private fireTimerMs = 2500;
   private pendingFire: { predictX: number; predictY: number } | null = null;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, MORTAR_BARGE_SPEC, x, y);
+    super(scene, getEnemySpec('mortar-barge'), x, y);
   }
 
   protected override drawVisual(): void {

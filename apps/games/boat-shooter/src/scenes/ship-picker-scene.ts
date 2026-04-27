@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { GameContext } from '@bilko/game-sdk';
 import { RunState } from '../run-state';
 import {
-  SHIP_CONFIGS, SHIP_IDS, rollRandomShipId,
+  getShipConfig, rollRandomShipId,
   type ShipConfig, type ShipId,
 } from '../data/starting-ships';
 
@@ -181,7 +181,7 @@ export class ShipPickerScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
       container.add(sub);
     } else {
-      const cfg = SHIP_CONFIGS[id];
+      const cfg = getShipConfig(id);
       const emoji = this.add.text(0, -58, cfg.emoji, {
         fontFamily: 'Apple Color Emoji, Segoe UI Emoji, sans-serif',
         fontSize: '40px',
@@ -241,7 +241,7 @@ export class ShipPickerScene extends Phaser.Scene {
     if (id === 'random') {
       // Pre-reveal which ship the random roll currently points to so the
       // player can re-roll by clicking again.
-      const revealed = SHIP_CONFIGS[this.randomRoll];
+      const revealed = getShipConfig(this.randomRoll);
       this.infoTitle.setText(`Fate rolls… ${revealed.displayName}`);
       this.infoFlavor.setText('Click Random again to re-roll before you set sail.');
       this.infoStats.setText(
@@ -253,7 +253,7 @@ export class ShipPickerScene extends Phaser.Scene {
       return;
     }
 
-    const cfg = SHIP_CONFIGS[id];
+    const cfg = getShipConfig(id);
     this.infoTitle.setText(`${cfg.emoji}  ${cfg.displayName}`);
     this.infoFlavor.setText(`“${cfg.flavor}”`);
     this.infoStats.setText(
@@ -334,5 +334,3 @@ export class ShipPickerScene extends Phaser.Scene {
   }
 }
 
-/** Compile-time guard so unreferenced imports don't rot silently. */
-void SHIP_IDS;

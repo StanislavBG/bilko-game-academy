@@ -1,26 +1,16 @@
 import { ShipwrightChest } from '../../systems/evolution-chest';
 import Phaser from 'phaser';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * B5 The Obsidian Warlord — Captain Magmar. Stage 13 boss.
  * Unique: ARENA HAZARDS — lava geysers, lava wave, volcanic bomb showers.
  * Immune to Burn. Fire weapons deal 0 damage.
  */
-export const OBSIDIAN_WARLORD_SPEC: EnemySpec = {
-  id: 'obsidian-warlord',
-  maxHp: 300,
-  armor: 6,
-  speed: 100,
-  contactDamage: 6,
-  collisionRadius: 72,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 18, gemChance: 1.0, xpOrbs: 8 },
-  color: 0x2a0808,
-  visualRadius: 66,
-};
 
 const FIRE_WEAPONS = new Set(['flamethrower', 'fire-arrow-rain']);
 
@@ -34,7 +24,7 @@ export class ObsidianWarlord extends Enemy {
   private eruptionMs = 2000; // only in phase 3
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, OBSIDIAN_WARLORD_SPEC, x, y);
+    super(scene, getEnemySpec('obsidian-warlord'), x, y);
     this.banner = new BossBanner(scene, 'Captain Magmar — Obsidian Warlord', () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase('Phase 1: Eruption');
     this.banner.redraw();

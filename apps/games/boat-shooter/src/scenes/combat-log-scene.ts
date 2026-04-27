@@ -221,6 +221,9 @@ export class CombatLogScene extends Phaser.Scene {
         return this.filters.status;
       case 'reaction':
         return this.filters.reaction;
+      case 'pickup':
+      case 'levelup':
+        return true;
     }
   }
 
@@ -239,6 +242,10 @@ export class CombatLogScene extends Phaser.Scene {
         return `[${t}] 🌊 ${e.status} ${e.added ? 'applied' : 'stacked'} → ${prettyName(e.target)}`;
       case 'reaction':
         return `[${t}] ✴ ${e.reaction} → ${prettyName(e.target)}`;
+      case 'pickup':
+        return `[${t}] + ${e.amount} ${e.pickup}`;
+      case 'levelup':
+        return `[${t}] ★ Level ${e.level}`;
     }
   }
 
@@ -257,6 +264,10 @@ export class CombatLogScene extends Phaser.Scene {
         return `[${t}] 🌊 STATUS ${e.status} ${e.added ? 'applied' : 'stacked'}\n  target=${prettyName(e.target)}`;
       case 'reaction':
         return `[${t}] ✴ REACTION ${e.reaction}\n  target=${prettyName(e.target)}`;
+      case 'pickup':
+        return `[${t}] + PICKUP ${e.pickup}\n  amount=${e.amount}`;
+      case 'levelup':
+        return `[${t}] ★ LEVEL UP\n  level=${e.level}`;
     }
   }
 }

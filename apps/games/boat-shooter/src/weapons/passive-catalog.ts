@@ -78,7 +78,9 @@ export const PASSIVE_TIERS = {
     cooldownReduction: [0, 0.08, 0.14, 0.20, 0.28, 0.38],
   },
   'cargo-nets': {
-    magnetBonus: [0, 0.30, 0.45, 0.60, 0.80, 1.20],
+    // PRD 2 — base magnet radius shrunk 280→80, so cargo-nets multipliers
+    // bumped to keep the upgrade meaningful (L5 radius = 80 × 4.0 = 320 px).
+    magnetBonus: [0, 0.75, 1.25, 1.75, 2.50, 3.00],
     coinValueBonus: [0, 0.10, 0.15, 0.25, 0.35, 0.50],
   },
   'spyglass': {

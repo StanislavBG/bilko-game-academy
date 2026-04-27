@@ -3,6 +3,7 @@ import type { GameContext, GameInstance, GameModule } from '@bilko/game-sdk';
 import { StageScene } from './scenes/stage-scene';
 import { HudScene } from './scenes/hud-scene';
 import { LevelUpScene } from './scenes/level-up-scene';
+import { BossSpoilsScene } from './scenes/boss-spoils-scene';
 import { MerchantScene } from './scenes/merchant-scene';
 import { StageClearScene } from './scenes/stage-clear-scene';
 import { GameOverScene } from './scenes/game-over-scene';
@@ -17,6 +18,9 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from './constants';
 import { DEFAULT_META_LEVELS, type MetaLevels } from './meta';
 import { currentWeeklyChallenge } from './weekly';
 import { currentDailyChallenge } from './daily';
+import { buildBundledPack, setActivePack } from './content/active-pack';
+import { fetchPack } from './content/fetch-pack';
+import { setSpriteServerUrl } from './systems/sprite-loader';
 
 /**
  * Boat Shooter — Game Module entry.
@@ -66,6 +70,20 @@ const gameModule: GameModule = {
   title: 'Boat Shooter',
   version: '0.1.0',
   mount(container: HTMLElement, ctx: GameContext): GameInstance {
+    // Read content-server URL once; cast-read because this package
+    // doesn't ship Vite's ambient types (the shell does, and that's
+    // where the build-time substitution actually runs).
+    const contentServerUrl = (
+      (import.meta as { env?: { VITE_CONTENT_SERVER_URL?: string } }).env
+        ?.VITE_CONTENT_SERVER_URL ?? ''
+    ).trim();
+    // Sync bundled pack first so any module that reads `getActivePack()`
+    // before READY (rare, but possible during scene-class evaluation)
+    // gets a real value. The async fetch may overwrite it before scenes
+    // start.
+    setActivePack(buildBundledPack());
+    if (contentServerUrl) setSpriteServerUrl(contentServerUrl);
+
     // Construct a placeholder RunState immediately; real meta-loaded one is
     // built after progress loads from IndexedDB.
     let runState = new RunState();
@@ -125,6 +143,13 @@ const gameModule: GameModule = {
 
     // Load persistent progress BEFORE starting the stage so meta-tracks + NG+ apply.
     game.events.once(Phaser.Core.Events.READY, async () => {
+      // Try the online overlay before any scene starts. Bundled defaults
+      // are already active (set above) so a failed fetch is invisible.
+      // 1500 ms timeout is short enough that boot doesn't visibly stall.
+      if (contentServerUrl) {
+        const overlay = await fetchPack({ url: contentServerUrl, timeoutMs: 1500 });
+        if (overlay) setActivePack(overlay);
+      }
       const loaded = await ctx.save.load<BoatShooterProgress>('progress', DEFAULT_PROGRESS);
       mergedProgress = { ...DEFAULT_PROGRESS, ...loaded, meta: { ...DEFAULT_META_LEVELS, ...(loaded.meta ?? {}) } };
       const weekly = weeklyMode ? currentWeeklyChallenge() : null;
@@ -143,6 +168,7 @@ const gameModule: GameModule = {
       (game as unknown as { _bilkoSpeed?: number })._bilkoSpeed = speed;
       game.scene.add('HudScene', HudScene, false);
       game.scene.add('LevelUpScene', LevelUpScene, false);
+      game.scene.add(BossSpoilsScene.KEY, BossSpoilsScene, false);
       game.scene.add('MerchantScene', MerchantScene, false);
       game.scene.add('StageClearScene', StageClearScene, false);
       game.scene.add('GameOverScene', GameOverScene, false);

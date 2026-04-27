@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { RunState } from '../run-state';
-import { STAGES, stageById } from '../data/stages';
+import { allStages, stageById } from '../data/stages';
 import type { GameContext } from '@bilko/game-sdk';
 import { RunSummaryScene } from './run-summary-scene';
 
@@ -45,12 +45,13 @@ export class StageClearScene extends Phaser.Scene {
 
     // Buttons — anchored below the run-summary card.
     const stage = stageById(this.data_.stageId);
-    const currentIdx = STAGES.findIndex((s) => s.id === stage.id);
-    const hasNext = currentIdx >= 0 && currentIdx < STAGES.length - 1;
+    const stages = allStages();
+    const currentIdx = stages.findIndex((s) => s.id === stage.id);
+    const hasNext = currentIdx >= 0 && currentIdx < stages.length - 1;
     const btnY = H - 70;
 
     if (hasNext) {
-      const next = STAGES[currentIdx + 1]!;
+      const next = stages[currentIdx + 1]!;
       this.renderButton(W / 2 - 180, btnY, `Next: ${next.title}`, 0x3a5a24, 0x8fce5a, () => {
         // Launch StageScene with the next stage.
         this.scene.stop(RunSummaryScene.KEY);
@@ -84,7 +85,7 @@ export class StageClearScene extends Phaser.Scene {
       accentColor: 0xc79448,
       onContinue: () => {
         if (hasNext) {
-          const next = STAGES[currentIdx + 1]!;
+          const next = stages[currentIdx + 1]!;
           void next;
           this.scene.stop(RunSummaryScene.KEY);
           this.scene.stop();

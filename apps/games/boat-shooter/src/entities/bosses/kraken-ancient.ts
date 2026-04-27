@@ -1,8 +1,9 @@
 import { ShipwrightChest } from '../../systems/evolution-chest';
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { BossBanner } from './boss-banner';
 import { WORLD_WIDTH, WORLD_HEIGHT } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * B6 The Kraken Ancient — FINAL BOSS.
@@ -13,17 +14,6 @@ import { WORLD_WIDTH, WORLD_HEIGHT } from '../../constants';
  *   P3 (Core HP 100): mouth opens; core vulnerable 2s / invulnerable 3s cycle; up to 5 tentacles.
  *   P4 (Core ≤ 20): continuous rage; cinematic on kill.
  */
-export const KRAKEN_ANCIENT_SPEC: EnemySpec = {
-  id: 'kraken-ancient',
-  maxHp: 500,
-  armor: 4,
-  speed: 60,
-  contactDamage: 6,
-  collisionRadius: 120,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 30, gemChance: 1.0, xpOrbs: 15 },
-  color: 0x5a2a8a,
-  visualRadius: 110,
-};
 
 export class KrakenAncient extends Enemy {
   private phase: 1 | 2 | 3 | 4 = 1;
@@ -37,7 +27,7 @@ export class KrakenAncient extends Enemy {
   private deathCinematic = false;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, KRAKEN_ANCIENT_SPEC, x, y);
+    super(scene, getEnemySpec('kraken-ancient'), x, y);
     this.banner = new BossBanner(scene, 'The Kraken Ancient', () => this.spec.maxHp, () => this.hp);
     this.banner.setPhase('Phase 1: The Gathering');
     this.banner.redraw();

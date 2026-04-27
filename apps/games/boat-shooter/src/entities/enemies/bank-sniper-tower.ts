@@ -1,26 +1,12 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { WORLD_HEIGHT } from '../../constants';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * N4 Bank Sniper Tower — stationary riverbank. High-damage rifle, leads player velocity.
  * Position is fixed on the side bank; despawns when scrolled past.
  */
-export const BANK_SNIPER_TOWER_SPEC: EnemySpec = {
-  id: 'bank-sniper-tower',
-  maxHp: 15,
-  armor: 3,
-  speed: 0,
-  contactDamage: 0,
-  collisionRadius: 30,
-  drops: { coinsSmall: 0, coinsMedium: 0, coinsLarge: 1, gemChance: 0.15, xpOrbs: 2 },
-  color: 0x6a5a3a,
-  visualRadius: 28,
-  element: 'physical',
-  // Laser is the primary tell; the 2-stage reticle would be redundant.
-  showAimReticle: false,
-  deathStyle: 'topple',  // tower falls forward + dust at the base
-};
 
 export class BankSniperTower extends Enemy {
   private aimLaserActive = false;
@@ -28,7 +14,7 @@ export class BankSniperTower extends Enemy {
   private dodgeUntilMs = 0;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, BANK_SNIPER_TOWER_SPEC, x, y);
+    super(scene, getEnemySpec('bank-sniper-tower'), x, y);
   }
 
   /** Variant: 0 = plain wood, 1 = red-roof garrison, 2 = stone-base watchtower. */

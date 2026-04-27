@@ -1,26 +1,14 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * S4 Cursed Swarm — tiny homing fodder, HP 1, chip damage. Many at once.
  */
-export const CURSED_SWARM_SPEC: EnemySpec = {
-  id: 'cursed-swarm',
-  maxHp: 1,
-  armor: 0,
-  speed: 180,
-  contactDamage: 0.3,
-  collisionRadius: 10,
-  drops: { coinsSmall: 1, coinsMedium: 0, coinsLarge: 0, gemChance: 0, xpOrbs: 0 },
-  color: 0x3a2a5a,
-  visualRadius: 8,
-  element: 'shadow',
-  deathStyle: 'dissolve', // swarm mote vanishes with a single cyan wisp
-};
 
 export class CursedSwarm extends Enemy {
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, CURSED_SWARM_SPEC, x, y);
+    super(scene, getEnemySpec('cursed-swarm'), x, y);
   }
 
   protected override drawVisual(): void {

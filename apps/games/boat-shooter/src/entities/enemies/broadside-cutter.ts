@@ -1,33 +1,20 @@
-import { Enemy, type EnemySpec } from '../enemy';
+import { Enemy } from '../enemy';
 import type { StageScene } from '../../scenes/stage-scene';
 import { fanSpread } from '../../systems/firing-patterns';
 import { chargeUp } from '../../systems/enemy-attack-fx';
+import { getEnemySpec } from '../../content/active-pack';
 
 /**
  * P2 Broadside Cutter — "drunk cannons"; pirate ranged. Fires in random directions
  * sometimes hitting its own allies.
  */
-export const BROADSIDE_CUTTER_SPEC: EnemySpec = {
-  id: 'broadside-cutter',
-  maxHp: 7,
-  armor: 1,
-  speed: 140,
-  contactDamage: 2,
-  collisionRadius: 32,
-  drops: { coinsSmall: 0, coinsMedium: 2, coinsLarge: 0, gemChance: 0.05, xpOrbs: 1 },
-  color: 0x5a3a24,
-  visualRadius: 30,
-  element: 'physical',
-  showAimReticle: false,
-  deathStyle: 'chain',   // flank-magazine cascade, bow-to-stern
-};
 
 export class BroadsideCutter extends Enemy {
   private fireTimerMs = 2000;
   private pendingFire: { baseAng: number } | null = null;
 
   constructor(scene: StageScene, x: number, y: number) {
-    super(scene, BROADSIDE_CUTTER_SPEC, x, y);
+    super(scene, getEnemySpec('broadside-cutter'), x, y);
   }
 
   protected override drawVisual(): void {

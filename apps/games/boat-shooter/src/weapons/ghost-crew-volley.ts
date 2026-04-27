@@ -54,7 +54,8 @@ export class GhostCrewVolley extends Weapon {
       return { count: 6, intervalMs: 99999, shotsPerGhost: 999, lingerMs: 99999, dmg: 3 };
     }
     switch (lvl) {
-      case 1: return { count: 2, intervalMs: 5000, shotsPerGhost: 3, lingerMs: 1000, dmg: 1 };
+      // PRD 7 buff: 5000→4000ms since elemental is now the only starter weapon.
+      case 1: return { count: 2, intervalMs: 4000, shotsPerGhost: 3, lingerMs: 1000, dmg: 1 };
       case 2: return { count: 3, intervalMs: 5000, shotsPerGhost: 3, lingerMs: 1500, dmg: 1 };
       case 3: return { count: 3, intervalMs: 4000, shotsPerGhost: 4, lingerMs: 1500, dmg: 1 };
       case 4: return { count: 4, intervalMs: 4000, shotsPerGhost: 4, lingerMs: 1500, dmg: 2 };
