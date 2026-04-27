@@ -1,4 +1,8 @@
-import type { OverrideSection } from './storage.js';
+/** Validator key — like the URL section name but with `abilityMaps`
+ *  camelCase to match the schema's ContentPack key. */
+export type SectionKey =
+  | 'sprites' | 'stages' | 'environments' | 'enemies'
+  | 'weapons' | 'passives' | 'ships' | 'abilityMaps';
 
 export interface ValidateResult {
   ok: boolean;
@@ -18,7 +22,7 @@ function arrayOfObjectsWithId(v: unknown): boolean {
   return true;
 }
 
-export function validateSection(name: OverrideSection, body: unknown): ValidateResult {
+export function validateSection(name: SectionKey, body: unknown): ValidateResult {
   switch (name) {
     case 'sprites': {
       if (!isObject(body)) return { ok: false, reason: 'sprites must be an object' };
@@ -69,7 +73,7 @@ export function validateSection(name: OverrideSection, body: unknown): ValidateR
   }
 }
 
-const URL_TO_KEY: Record<string, OverrideSection> = {
+const URL_TO_KEY: Record<string, SectionKey> = {
   sprites: 'sprites',
   stages: 'stages',
   ships: 'ships',
@@ -80,6 +84,6 @@ const URL_TO_KEY: Record<string, OverrideSection> = {
   'ability-maps': 'abilityMaps',
 };
 
-export function urlSectionToKey(name: string): OverrideSection | null {
+export function urlSectionToKey(name: string): SectionKey | null {
   return URL_TO_KEY[name] ?? null;
 }

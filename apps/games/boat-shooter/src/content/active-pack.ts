@@ -27,14 +27,17 @@ import abilityMapsRaw from '@bilko/boat-shooter-content/data/ability-maps.json';
  * Active ContentPack — module-scoped so every consumer (stages, ships,
  * sprite-loader, …) reads the same source of truth.
  *
- * Boot pipeline (in apps/games/boat-shooter/src/index.ts):
- *   1. fetchPack() — try the content server.
- *   2. setActivePack(pack ?? buildBundledPack()).
- *   3. Add Phaser scenes; they may now read getActivePack() at any time.
+ * **Source of truth.** The canonical JSON files in
+ * `packages/boat-shooter-content/data/` are git-tracked and form the
+ * SOR. The admin app (dev-only, see apps/shell/src/admin/) writes to
+ * those files directly via the local content-server; Vite HMR reloads
+ * the imports below; production builds bundle the JSON.
  *
- * No automatic mutation after boot — the bundled-default arrays are
- * the same reference shape as the server's response, so consumers can
- * cache derived data without worrying about live re-merge.
+ * Boot pipeline (in apps/games/boat-shooter/src/index.ts):
+ *   1. setActivePack(buildBundledPack()).
+ *   2. Add Phaser scenes; they may now read getActivePack() at any time.
+ *
+ * No automatic mutation after boot.
  */
 
 let active: ContentPack | null = null;

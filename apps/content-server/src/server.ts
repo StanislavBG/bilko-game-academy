@@ -1,27 +1,28 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { getBundled } from './bundled.js';
-import { mergePack } from './merge.js';
 import {
   ensureDirs,
-  loadOverrides,
   loadSpritePath,
-  saveOverrideSection,
+  saveSection,
   saveSpritePng,
 } from './storage.js';
 import { urlSectionToKey, validateSection } from './validate.js';
 import { requireBearer } from './auth.js';
 import { regenSprite } from './gemini.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// dist/server.js sits two levels above the repo root's bundled-sprite folder
-// when running compiled, and src/server.ts sits the same depth in dev.
-const REPO_ROOT = resolve(__dirname, '../../..');
-const BUNDLED_SPRITES_DIR = join(REPO_ROOT, 'apps/games/boat-shooter/assets/sprites');
+/**
+ * Boat Shooter Admin content server — local dev tool for the indie dev.
+ *
+ * **Edits land directly in the canonical JSON / PNG files in git** (see
+ * storage.ts). There is no overrides overlay, no publish step. Workflow:
+ *   admin save → file diff on disk → `git status` → commit → push
+ *
+ * The game runtime in production reads bundled JSON only; this server is
+ * never deployed live.
+ */
 
 ensureDirs();
 
@@ -30,7 +31,6 @@ const app = Fastify({ logger: true });
 const origin = process.env['BILKO_ORIGIN'] ?? '*';
 await app.register(cors, { origin });
 
-// Accept raw PNG bodies for sprite uploads.
 app.addContentTypeParser(
   'application/octet-stream',
   { parseAs: 'buffer' },
@@ -38,8 +38,7 @@ app.addContentTypeParser(
 );
 
 function buildPack(): { json: string; etag: string } {
-  const merged = mergePack(getBundled(), loadOverrides());
-  const json = JSON.stringify(merged);
+  const json = JSON.stringify(getBundled());
   const etag = `"${createHash('sha1').update(json).digest('hex')}"`;
   return { json, etag };
 }
@@ -73,18 +72,13 @@ app.put('/v1/content/section/:name', { preHandler: requireBearer }, async (req, 
     reply.code(400).send({ error: result.reason ?? 'invalid body' });
     return;
   }
-  saveOverrideSection(key, body);
-  reply.send({ ok: true, section: key });
+  const path = saveSection(name as Parameters<typeof saveSection>[0], body);
+  reply.send({ ok: true, section: key, path });
 });
 
 app.get('/v1/sprite/:id.png', async (req, reply) => {
   const { id } = req.params as { id: string };
-  const overridePath = loadSpritePath(id);
-  let path = overridePath;
-  if (!path) {
-    const fallback = join(BUNDLED_SPRITES_DIR, `${id}.png`);
-    if (existsSync(fallback)) path = fallback;
-  }
+  const path = loadSpritePath(id);
   if (!path) {
     reply.code(404).send({ error: `sprite not found: ${id}` });
     return;
@@ -103,8 +97,8 @@ app.put('/v1/sprite/:id', { preHandler: requireBearer }, async (req, reply) => {
     reply.code(400).send({ error: 'expected application/octet-stream PNG body' });
     return;
   }
-  saveSpritePng(id, body);
-  reply.send({ ok: true, id, bytes: body.length });
+  const path = saveSpritePng(id, body);
+  reply.send({ ok: true, id, bytes: body.length, path });
 });
 
 app.post('/v1/sprite/:id/regen', { preHandler: requireBearer }, async (req, reply) => {
@@ -124,12 +118,12 @@ app.post('/v1/sprite/:id/regen', { preHandler: requireBearer }, async (req, repl
     return;
   }
   const buf = Buffer.from(result.pngB64, 'base64');
-  saveSpritePng(id, buf);
-  reply.send({ ok: true, url: `/v1/sprite/${id}.png`, pngB64: result.pngB64 });
+  const path = saveSpritePng(id, buf);
+  reply.send({ ok: true, url: `/v1/sprite/${id}.png`, pngB64: result.pngB64, path });
 });
 
 const port = Number(process.env['PORT'] ?? 3001);
-const host = process.env['HOST'] ?? '0.0.0.0';
+const host = process.env['HOST'] ?? '127.0.0.1';
 try {
   await app.listen({ port, host });
 } catch (err) {

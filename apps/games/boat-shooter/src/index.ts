@@ -19,8 +19,6 @@ import { DEFAULT_META_LEVELS, type MetaLevels } from './meta';
 import { currentWeeklyChallenge } from './weekly';
 import { currentDailyChallenge } from './daily';
 import { buildBundledPack, setActivePack } from './content/active-pack';
-import { fetchPack } from './content/fetch-pack';
-import { setSpriteServerUrl } from './systems/sprite-loader';
 
 /**
  * Boat Shooter — Game Module entry.
@@ -70,19 +68,12 @@ const gameModule: GameModule = {
   title: 'Boat Shooter',
   version: '0.1.0',
   mount(container: HTMLElement, ctx: GameContext): GameInstance {
-    // Read content-server URL once; cast-read because this package
-    // doesn't ship Vite's ambient types (the shell does, and that's
-    // where the build-time substitution actually runs).
-    const contentServerUrl = (
-      (import.meta as { env?: { VITE_CONTENT_SERVER_URL?: string } }).env
-        ?.VITE_CONTENT_SERVER_URL ?? ''
-    ).trim();
-    // Sync bundled pack first so any module that reads `getActivePack()`
-    // before READY (rare, but possible during scene-class evaluation)
-    // gets a real value. The async fetch may overwrite it before scenes
-    // start.
+    // Bundled JSON is the source of truth in both dev and prod.
+    // - In dev: admin saves write directly to the canonical files in
+    //   `packages/boat-shooter-content/data/` and Vite HMR reloads them.
+    // - In prod: the JSON is bundled into the build; no network fetch.
+    // No content-server overlay step exists.
     setActivePack(buildBundledPack());
-    if (contentServerUrl) setSpriteServerUrl(contentServerUrl);
 
     // Construct a placeholder RunState immediately; real meta-loaded one is
     // built after progress loads from IndexedDB.
@@ -143,13 +134,6 @@ const gameModule: GameModule = {
 
     // Load persistent progress BEFORE starting the stage so meta-tracks + NG+ apply.
     game.events.once(Phaser.Core.Events.READY, async () => {
-      // Try the online overlay before any scene starts. Bundled defaults
-      // are already active (set above) so a failed fetch is invisible.
-      // 1500 ms timeout is short enough that boot doesn't visibly stall.
-      if (contentServerUrl) {
-        const overlay = await fetchPack({ url: contentServerUrl, timeoutMs: 1500 });
-        if (overlay) setActivePack(overlay);
-      }
       const loaded = await ctx.save.load<BoatShooterProgress>('progress', DEFAULT_PROGRESS);
       mergedProgress = { ...DEFAULT_PROGRESS, ...loaded, meta: { ...DEFAULT_META_LEVELS, ...(loaded.meta ?? {}) } };
       const weekly = weeklyMode ? currentWeeklyChallenge() : null;

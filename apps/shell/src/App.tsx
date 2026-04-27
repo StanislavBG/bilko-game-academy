@@ -18,6 +18,13 @@ import { LevelPage } from './admin/levels/level-page';
 import { EnvironmentsPage } from './admin/environments/env-page';
 import { AbilitiesPage } from './admin/abilities/abilities-page';
 
+/**
+ * Admin routes are dev-only. Production builds ship preview-only — players
+ * see the game + bundled content; edits happen on disk via Claude sessions
+ * or the local content-server, then get committed to git as canonical JSON.
+ */
+export const ADMIN_ENABLED: boolean = import.meta.env.DEV;
+
 export function App(): JSX.Element {
   return (
     <Routes>
@@ -36,17 +43,17 @@ export function App(): JSX.Element {
         <Route path="/meta/boat-shooter" element={<MetaShop/>}/>
       </Route>
 
-      {/* Admin app — dark sidebar + ADMIN ribbon, wraps the existing
-          per-section editor pages. */}
-      <Route element={<AdminFrame/>}>
-        <Route path="/admin"                            element={<AdminDashboard/>}/>
-        <Route path="/admin/publish"                    element={<AdminPublish/>}/>
-        <Route path="/admin/boat-shooter/garage"        element={<GaragePage/>}/>
-        <Route path="/admin/boat-shooter/enemy-lair"    element={<EnemyLairPage/>}/>
-        <Route path="/admin/boat-shooter/levels"        element={<LevelPage/>}/>
-        <Route path="/admin/boat-shooter/environments"  element={<EnvironmentsPage/>}/>
-        <Route path="/admin/boat-shooter/abilities"     element={<AbilitiesPage/>}/>
-      </Route>
+      {ADMIN_ENABLED && (
+        <Route element={<AdminFrame/>}>
+          <Route path="/admin"                            element={<AdminDashboard/>}/>
+          <Route path="/admin/publish"                    element={<AdminPublish/>}/>
+          <Route path="/admin/boat-shooter/garage"        element={<GaragePage/>}/>
+          <Route path="/admin/boat-shooter/enemy-lair"    element={<EnemyLairPage/>}/>
+          <Route path="/admin/boat-shooter/levels"        element={<LevelPage/>}/>
+          <Route path="/admin/boat-shooter/environments"  element={<EnvironmentsPage/>}/>
+          <Route path="/admin/boat-shooter/abilities"     element={<AbilitiesPage/>}/>
+        </Route>
+      )}
 
       <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>

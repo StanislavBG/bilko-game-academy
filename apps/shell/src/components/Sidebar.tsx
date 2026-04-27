@@ -24,7 +24,7 @@ const ADMIN_ITEMS: NavItemDef[] = [
   { id: 'weapons',   label: 'Weapons',   icon: 'bolt',    path: '/admin/boat-shooter/abilities' },
   { id: 'stages',    label: 'Stages',    icon: 'compass', path: '/admin/boat-shooter/levels' },
   { id: 'economy',   label: 'Economy',   icon: 'gem',     path: '/admin/boat-shooter/environments' },
-  { id: 'publish',   label: 'Publish',   icon: 'rocket',  path: '/admin/publish' },
+  { id: 'publish',   label: 'Workflow',  icon: 'book',    path: '/admin/publish' },
 ];
 
 interface CurrencyState { gems: number; mapFragments: number; rank: number; cleared: number }
@@ -135,9 +135,13 @@ function Wordmark({ isAdmin }: { isAdmin: boolean }): JSX.Element {
   );
 }
 
-function AppSwitcher({ isAdmin }: { isAdmin: boolean }): JSX.Element {
+/** Admin half is dev-only — production renders just the Player chip. */
+const ADMIN_ENABLED = import.meta.env.DEV;
+
+function AppSwitcher({ isAdmin }: { isAdmin: boolean }): JSX.Element | null {
   const navigate = useNavigate();
   const location = useLocation();
+  if (!ADMIN_ENABLED) return null;
   return (
     <div style={{
       padding: 4, borderRadius: 12,
@@ -152,7 +156,7 @@ function AppSwitcher({ isAdmin }: { isAdmin: boolean }): JSX.Element {
       <SwitcherButton
         active={isAdmin}
         onClick={() => navigate('/admin')}
-        label="Admin" sub="Configs" icon="gear" accent="var(--gold-500)"
+        label="Admin" sub="Local" icon="gear" accent="var(--gold-500)"
         adminMode={isAdmin}/>
     </div>
   );
