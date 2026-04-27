@@ -606,143 +606,30 @@ function bakeWreckage(scene: StageScene): void {
 
 const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
   rivermouth: {
+    // Visual relaxness pass: cut the bank-grass cadence by ~3×, drop the
+    // mid-stream grass duplicate, halve cattail/bullrush. Banks still read
+    // as banks; the play area gets quiet and dodge-friendly.
     props: [
-      // Stone marker at the river fork.
       { kind: 'stone-marker', x: WORLD_WIDTH / 2, y: 300, parallax: 1, depth: -65 },
-      // A couple of static mud bars for initial visible state.
-      { kind: 'mud-bar', x: 240, y: 620, parallax: 1, depth: -72, rotation: 0.2 },
-      { kind: 'mud-bar', x: WORLD_WIDTH - 260, y: 980, parallax: 1, depth: -72, rotation: -0.3 },
+      { kind: 'mud-bar',      x: 240,             y: 620, parallax: 1, depth: -72, rotation: 0.2 },
+      { kind: 'mud-bar',      x: WORLD_WIDTH - 260, y: 980, parallax: 1, depth: -72, rotation: -0.3 },
     ],
     spawners: [
-      // Thick reeds along the left bank — dense enough to read as a bank.
-      {
-        kind: 'reed-clump',
-        intervalMs: 450,
-        xRange: [10, 130],
-        y: -180,
-        rotationRange: [-0.15, 0.15],
-        scaleRange: [0.75, 1.25],
-        parallax: 1,
-        depth: -68,
-      },
-      // Thick reeds along the right bank.
-      {
-        kind: 'reed-clump',
-        intervalMs: 450,
-        xRange: [WORLD_WIDTH - 130, WORLD_WIDTH - 10],
-        y: -180,
-        rotationRange: [-0.15, 0.15],
-        scaleRange: [0.75, 1.25],
-        parallax: 1,
-        depth: -68,
-      },
-      // Smaller grass tufts drifting mid-stream — fills the gap.
-      {
-        kind: 'grass-tuft',
-        intervalMs: 1800,
-        xRange: [180, WORLD_WIDTH - 180],
-        y: -60,
-        rotationRange: [-0.3, 0.3],
-        scaleRange: [0.7, 1.15],
-        parallax: 1,
-        depth: -70,
-      },
-      // Occasional closer-to-bank grass patches for rhythm variety.
-      {
-        kind: 'grass-tuft',
-        intervalMs: 1200,
-        xRange: [140, 220],
-        y: -60,
-        rotationRange: [-0.3, 0.3],
-        scaleRange: [0.6, 1.1],
-        parallax: 1,
-        depth: -69,
-      },
-      {
-        kind: 'grass-tuft',
-        intervalMs: 1200,
-        xRange: [WORLD_WIDTH - 220, WORLD_WIDTH - 140],
-        y: -60,
-        rotationRange: [-0.3, 0.3],
-        scaleRange: [0.6, 1.1],
-        parallax: 1,
-        depth: -69,
-      },
-      // Lily pads mid-stream.
-      {
-        kind: 'lily-leaf',
-        intervalMs: 1400,
-        xRange: [180, WORLD_WIDTH - 180],
-        y: -40,
-        rotationRange: [0, Math.PI * 2],
-        scaleRange: [0.7, 1.3],
-        parallax: 1,
-        depth: -70,
-      },
-      // Drifting logs.
-      {
-        kind: 'river-log',
-        intervalMs: 5200,
-        xRange: [120, WORLD_WIDTH - 120],
-        y: -40,
-        rotationRange: [-0.4, 0.4],
-        scaleRange: [0.9, 1.2],
-        parallax: 1,
-        depth: -66,
-      },
-      // Ambient fish — pure decoration, no interaction. Schools appear
-      // mid-channel, koi pairs hug the banks. Slightly slower parallax
-      // sells "swimming WITH the current" rather than "drifting like
-      // debris". Depth -72 so they sit visually below the player ship.
-      {
-        kind: 'fish-school',
-        intervalMs: 3800,
-        xRange: [180, WORLD_WIDTH - 180],
-        y: -60,
-        rotationRange: [-0.2, 0.2],
-        scaleRange: [0.8, 1.2],
-        parallax: 0.85,
-        depth: -72,
-      },
-      {
-        kind: 'fish-large',
-        intervalMs: 9000,
-        xRange: [200, WORLD_WIDTH - 200],
-        y: -60,
-        rotationRange: [-0.3, 0.3],
-        scaleRange: [0.85, 1.15],
-        parallax: 0.9,
-        depth: -71,
-      },
-      {
-        kind: 'fish-koi-trio',
-        intervalMs: 6500,
-        xRange: [140, 280],
-        y: -60,
-        rotationRange: [-0.4, 0.4],
-        scaleRange: [0.8, 1.1],
-        parallax: 0.85,
-        depth: -73,
-      },
-      {
-        kind: 'fish-koi-trio',
-        intervalMs: 6500,
-        xRange: [WORLD_WIDTH - 280, WORLD_WIDTH - 140],
-        y: -60,
-        rotationRange: [-0.4, 0.4],
-        scaleRange: [0.8, 1.1],
-        parallax: 0.85,
-        depth: -73,
-      },
-      // PRD 3 — additional flora + wildlife so the river reads alive.
-      { kind: 'water-pad', intervalMs: 4500, xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [0, Math.PI * 2], scaleRange: [0.85, 1.2], parallax: 1, depth: -69 },
-      { kind: 'cattail',   intervalMs: 1100, xRange: [40, 130], y: -120, rotationRange: [-0.15, 0.15], scaleRange: [0.85, 1.2], parallax: 1, depth: -68 },
-      { kind: 'cattail',   intervalMs: 1100, xRange: [WORLD_WIDTH - 130, WORLD_WIDTH - 40], y: -120, rotationRange: [-0.15, 0.15], scaleRange: [0.85, 1.2], parallax: 1, depth: -68 },
-      { kind: 'bullrush',  intervalMs: 900,  xRange: [60, 150], y: -150, rotationRange: [-0.1, 0.1], scaleRange: [0.85, 1.15], parallax: 1, depth: -68 },
-      { kind: 'bullrush',  intervalMs: 900,  xRange: [WORLD_WIDTH - 150, WORLD_WIDTH - 60], y: -150, rotationRange: [-0.1, 0.1], scaleRange: [0.85, 1.15], parallax: 1, depth: -68 },
-      { kind: 'frog-trio', intervalMs: 12000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.9, 1.1], parallax: 1, depth: -71 },
-      { kind: 'turtle',    intervalMs: 9500, xRange: [180, WORLD_WIDTH - 180], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.1], parallax: 0.9, depth: -71 },
-      { kind: 'fish-bass-trio', intervalMs: 7000, xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.15], parallax: 0.85, depth: -73 },
+      // Reed banks — both edges, slowed 450 → 1400 ms.
+      { kind: 'reed-clump', intervalMs: 1400, xRange: [10, 130],                       y: -180, rotationRange: [-0.15, 0.15], scaleRange: [0.75, 1.25], parallax: 1, depth: -68 },
+      { kind: 'reed-clump', intervalMs: 1400, xRange: [WORLD_WIDTH - 130, WORLD_WIDTH - 10], y: -180, rotationRange: [-0.15, 0.15], scaleRange: [0.75, 1.25], parallax: 1, depth: -68 },
+      // Lily pads mid-stream — calm, infrequent.
+      { kind: 'lily-leaf',  intervalMs: 3500, xRange: [220, WORLD_WIDTH - 220], y: -40, rotationRange: [0, Math.PI * 2], scaleRange: [0.7, 1.3], parallax: 1, depth: -70 },
+      // Drifting logs — rhythm beat.
+      { kind: 'river-log',  intervalMs: 6500, xRange: [120, WORLD_WIDTH - 120], y: -40, rotationRange: [-0.4, 0.4], scaleRange: [0.9, 1.2], parallax: 1, depth: -66 },
+      // Ambient fish — sparse, pure decoration.
+      { kind: 'fish-school',    intervalMs: 6000,  xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [-0.2, 0.2], scaleRange: [0.8, 1.2], parallax: 0.85, depth: -72 },
+      { kind: 'fish-large',     intervalMs: 12000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.85, 1.15], parallax: 0.9, depth: -71 },
+      { kind: 'fish-koi-trio',  intervalMs: 9000,  xRange: [WORLD_WIDTH - 280, WORLD_WIDTH - 140], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.8, 1.1], parallax: 0.85, depth: -73 },
+      // Wildlife — flagship moments, very infrequent.
+      { kind: 'water-pad',      intervalMs: 7000,  xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [0, Math.PI * 2], scaleRange: [0.85, 1.2], parallax: 1, depth: -69 },
+      { kind: 'turtle',         intervalMs: 14000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.1], parallax: 0.9, depth: -71 },
+      { kind: 'fish-bass-trio', intervalMs: 11000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.15], parallax: 0.85, depth: -73 },
     ],
   },
 
@@ -754,79 +641,16 @@ const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
       { kind: 'mangrove-root', x: 260, y: 1240, parallax: 1, depth: -66, scale: 1.3 },
     ],
     spawners: [
-      // Continuous mangrove bank — left edge, slow parallax.
-      {
-        kind: 'mangrove-bank',
-        intervalMs: 2400,
-        xRange: [0, 40],
-        y: -140,
-        scaleRange: [1, 1],
-        parallax: 0.85,
-        depth: -78,
-      },
-      // And right edge, mirrored.
-      {
-        kind: 'mangrove-bank',
-        intervalMs: 2400,
-        xRange: [WORLD_WIDTH - 40, WORLD_WIDTH],
-        y: -140,
-        rotationRange: [Math.PI, Math.PI],
-        scaleRange: [1, 1],
-        parallax: 0.85,
-        depth: -78,
-      },
-      // Dock planks along the banks — where sniper towers usually sit.
-      {
-        kind: 'dock-plank',
-        intervalMs: 4200,
-        xRange: [60, 120],
-        y: -60,
-        scaleRange: [0.8, 1.2],
-        parallax: 1,
-        depth: -68,
-      },
-      {
-        kind: 'dock-plank',
-        intervalMs: 4200,
-        xRange: [WORLD_WIDTH - 120, WORLD_WIDTH - 60],
-        y: -60,
-        scaleRange: [0.8, 1.2],
-        parallax: 1,
-        depth: -68,
-      },
-      // Occasional debris crate.
-      {
-        kind: 'debris-crate',
-        intervalMs: 6800,
-        xRange: [200, WORLD_WIDTH - 200],
-        y: -60,
-        rotationRange: [0, Math.PI * 2],
-        scaleRange: [0.8, 1.2],
-        parallax: 1,
-        depth: -67,
-      },
-      // Grass tufts hugging the mangrove bank edge — softens the sharp
-      // mangrove silhouette so the water-line reads as organic.
-      {
-        kind: 'grass-tuft',
-        intervalMs: 700,
-        xRange: [40, 120],
-        y: -60,
-        rotationRange: [-0.3, 0.3],
-        scaleRange: [0.6, 1.1],
-        parallax: 1,
-        depth: -70,
-      },
-      {
-        kind: 'grass-tuft',
-        intervalMs: 700,
-        xRange: [WORLD_WIDTH - 120, WORLD_WIDTH - 40],
-        y: -60,
-        rotationRange: [-0.3, 0.3],
-        scaleRange: [0.6, 1.1],
-        parallax: 1,
-        depth: -70,
-      },
+      // Mangrove banks slowed 2400 → 3200 ms; dock-plank + debris also relaxed.
+      { kind: 'mangrove-bank', intervalMs: 3200, xRange: [0, 40], y: -140, scaleRange: [1, 1], parallax: 0.85, depth: -78 },
+      { kind: 'mangrove-bank', intervalMs: 3200, xRange: [WORLD_WIDTH - 40, WORLD_WIDTH], y: -140, rotationRange: [Math.PI, Math.PI], scaleRange: [1, 1], parallax: 0.85, depth: -78 },
+      { kind: 'dock-plank',   intervalMs: 6500, xRange: [60, 120],                      y: -60, scaleRange: [0.8, 1.2], parallax: 1, depth: -68 },
+      { kind: 'dock-plank',   intervalMs: 6500, xRange: [WORLD_WIDTH - 120, WORLD_WIDTH - 60], y: -60, scaleRange: [0.8, 1.2], parallax: 1, depth: -68 },
+      { kind: 'debris-crate', intervalMs: 9000, xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [0, Math.PI * 2], scaleRange: [0.8, 1.2], parallax: 1, depth: -67 },
+      // Bank-edge grass — slowed 700 → 2200 ms. Still softens the
+      // mangrove edge but doesn't carpet the channel.
+      { kind: 'grass-tuft', intervalMs: 2200, xRange: [40, 120], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.6, 1.1], parallax: 1, depth: -70 },
+      { kind: 'grass-tuft', intervalMs: 2200, xRange: [WORLD_WIDTH - 120, WORLD_WIDTH - 40], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.6, 1.1], parallax: 1, depth: -70 },
     ],
   },
 
@@ -837,38 +661,10 @@ const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
       { kind: 'blockade-line', x: WORLD_WIDTH / 2, y: 60, parallax: 0, depth: -78 },
     ],
     spawners: [
-      // Distant friendly galleons — very slow parallax, high up.
-      {
-        kind: 'fleet-silhouette',
-        intervalMs: 6400,
-        xRange: [100, WORLD_WIDTH - 100],
-        y: 110,
-        scaleRange: [0.9, 1.15],
-        parallax: 0.25,
-        depth: -78,
-      },
-      // Floating wreckage marking the fleet's advance.
-      {
-        kind: 'wreckage',
-        intervalMs: 3200,
-        xRange: [160, WORLD_WIDTH - 160],
-        y: -60,
-        rotationRange: [-0.4, 0.4],
-        scaleRange: [0.85, 1.25],
-        parallax: 1,
-        depth: -66,
-      },
-      // Scattered broken crates.
-      {
-        kind: 'debris-crate',
-        intervalMs: 2800,
-        xRange: [100, WORLD_WIDTH - 100],
-        y: -40,
-        rotationRange: [0, Math.PI * 2],
-        scaleRange: [0.7, 1.1],
-        parallax: 1,
-        depth: -67,
-      },
+      // Open sea: distant galleons stay rare; wreckage/crate cadence relaxed.
+      { kind: 'fleet-silhouette', intervalMs: 8500, xRange: [100, WORLD_WIDTH - 100], y: 110, scaleRange: [0.9, 1.15], parallax: 0.25, depth: -78 },
+      { kind: 'wreckage',         intervalMs: 5500, xRange: [160, WORLD_WIDTH - 160], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.25], parallax: 1, depth: -66 },
+      { kind: 'debris-crate',     intervalMs: 5500, xRange: [120, WORLD_WIDTH - 120], y: -40, rotationRange: [0, Math.PI * 2], scaleRange: [0.7, 1.1], parallax: 1, depth: -67 },
     ],
   },
 };
