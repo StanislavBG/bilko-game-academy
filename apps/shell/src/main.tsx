@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { initI18n } from './i18n';
+import { StaleBuildBanner } from './components/StaleBuildBanner';
 import { useSettings } from '@bilko/platform-core/settings';
 import './styles.css';
 
@@ -19,6 +20,7 @@ ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
+      <StaleBuildBanner />
     </BrowserRouter>
   </React.StrictMode>,
 );

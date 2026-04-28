@@ -85,11 +85,53 @@ export function GameLauncher(): JSX.Element {
         ← {t('game.back')}
       </Link>
       <AchievementToasts eventSource={eventSource} />
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-sea-900/90 text-red-300 p-8">
-          <pre className="whitespace-pre-wrap">{error}</pre>
-        </div>
-      )}
+      {error && <ErrorOverlay message={error}/>}
+    </div>
+  );
+}
+
+function ErrorOverlay({ message }: { message: string }): JSX.Element {
+  // Most likely cause when the lazy game-module import fails on a returning
+  // visitor: their service worker cached a previous build's bundle that
+  // points at chunk filenames that no longer exist on disk. Reload =
+  // recovery. The StaleBuildBanner also catches this globally; this is the
+  // friendly in-place version for users who already nav'd into the game.
+  const isChunkLoadError = /Failed to fetch dynamically imported module|error loading dynamically imported module|ChunkLoadError/i.test(message);
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-sea-900/95 text-sea-100 p-8">
+      <div className="max-w-md text-center">
+        <h2 className="font-display text-2xl text-gold-400 mb-3">
+          {isChunkLoadError ? 'A new version is available' : 'Game failed to load'}
+        </h2>
+        <p className="text-sm text-sea-300 mb-5">
+          {isChunkLoadError
+            ? "The cached build doesn't match the current deploy. Reload to pick up the new code."
+            : 'Something went wrong while loading the game module.'}
+        </p>
+        <pre className="whitespace-pre-wrap text-[11px] text-red-300 bg-sea-950 rounded p-3 mb-5 text-left max-h-32 overflow-auto">
+          {message}
+        </pre>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(regs.map((r) => r.unregister()));
+              }
+              if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((k) => caches.delete(k)));
+              }
+            } finally {
+              window.location.reload();
+            }
+          }}
+          className="px-4 py-2 rounded bg-gold-500 text-sea-900 font-bold uppercase tracking-wider text-sm hover:bg-gold-400"
+        >
+          Reload
+        </button>
+      </div>
     </div>
   );
 }

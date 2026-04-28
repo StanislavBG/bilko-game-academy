@@ -36,6 +36,14 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,ico,woff2,json}'],
         globIgnores: ['**/boat-shooter-sprites/**'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // After a deploy, the new SW activates immediately (otherwise the
+        // old SW keeps serving stale chunk URLs and dynamic imports 404).
+        skipWaiting: true,
+        clientsClaim: true,
+        // Drop hashed chunks from previous deploys so the SW's precache
+        // doesn't pin them indefinitely. Workbox's default behavior is to
+        // clean up old precache entries on activate; this is explicit.
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /\/boat-shooter-sprites\/.*\.png$/,
