@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { EnvironmentSpec } from '@bilko/boat-shooter-schema';
 import type { StageScene } from '../scenes/stage-scene';
-import { WORLD_HEIGHT, WORLD_WIDTH, RIVER_SCROLL_SPEED } from '../constants';
+import { WORLD_HEIGHT, RIVER_SCROLL_SPEED } from '../constants';
 import type { WaterBiome } from './water-shader';
 
 /**
@@ -601,57 +601,18 @@ function bakeWreckage(scene: StageScene): void {
 }
 
 // ============================================================================
-// Per-biome scenery manifests — pure data. Extend by adding new entries.
+// Per-biome scenery manifests.
+//
+// Act I (stages 1-1..1-5) ships with NO decorative scenery — only water,
+// enemies, and hazards. The biomes those stages map to (`rivermouth` /
+// `channels` / `open-sea`) are intentionally absent here; `applyManifest`
+// treats a missing entry as "draw nothing".
+//
+// Future biomes (cursed bay, volcanic, frozen) can register here later
+// if their stages want decorative depth. Keep stages 1-1..1-5 quiet.
 // ============================================================================
 
-const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
-  rivermouth: {
-    // Stage 1 — minimal. Water and ship are the visual focus. One static
-    // marker for orientation, one slow ambient drift. Everything else
-    // stripped (was 13 prop/spawner entries → 2).
-    props: [
-      { kind: 'stone-marker', x: WORLD_WIDTH / 2, y: 300, parallax: 1, depth: -65 },
-    ],
-    spawners: [
-      { kind: 'river-log', intervalMs: 12000, xRange: [200, WORLD_WIDTH - 200], y: -40, rotationRange: [-0.4, 0.4], scaleRange: [0.9, 1.2], parallax: 1, depth: -66 },
-    ],
-  },
-
-  channels: {
-    props: [
-      // Static mangrove root clusters that break the channel into lanes.
-      { kind: 'mangrove-root', x: 220, y: 400, parallax: 1, depth: -66, scale: 1.3 },
-      { kind: 'mangrove-root', x: WORLD_WIDTH - 240, y: 820, parallax: 1, depth: -66, scale: 1.3 },
-      { kind: 'mangrove-root', x: 260, y: 1240, parallax: 1, depth: -66, scale: 1.3 },
-    ],
-    spawners: [
-      // Mangrove banks slowed 2400 → 3200 ms; dock-plank + debris also relaxed.
-      { kind: 'mangrove-bank', intervalMs: 3200, xRange: [0, 40], y: -140, scaleRange: [1, 1], parallax: 0.85, depth: -78 },
-      { kind: 'mangrove-bank', intervalMs: 3200, xRange: [WORLD_WIDTH - 40, WORLD_WIDTH], y: -140, rotationRange: [Math.PI, Math.PI], scaleRange: [1, 1], parallax: 0.85, depth: -78 },
-      { kind: 'dock-plank',   intervalMs: 6500, xRange: [60, 120],                      y: -60, scaleRange: [0.8, 1.2], parallax: 1, depth: -68 },
-      { kind: 'dock-plank',   intervalMs: 6500, xRange: [WORLD_WIDTH - 120, WORLD_WIDTH - 60], y: -60, scaleRange: [0.8, 1.2], parallax: 1, depth: -68 },
-      { kind: 'debris-crate', intervalMs: 9000, xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [0, Math.PI * 2], scaleRange: [0.8, 1.2], parallax: 1, depth: -67 },
-      // Bank-edge grass — slowed 700 → 2200 ms. Still softens the
-      // mangrove edge but doesn't carpet the channel.
-      { kind: 'grass-tuft', intervalMs: 2200, xRange: [40, 120], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.6, 1.1], parallax: 1, depth: -70 },
-      { kind: 'grass-tuft', intervalMs: 2200, xRange: [WORLD_WIDTH - 120, WORLD_WIDTH - 40], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.6, 1.1], parallax: 1, depth: -70 },
-    ],
-  },
-
-  'open-sea': {
-    props: [
-      // A single blockade line at the top of the world (static — the Navy
-      // is on the horizon, not scrolling past).
-      { kind: 'blockade-line', x: WORLD_WIDTH / 2, y: 60, parallax: 0, depth: -78 },
-    ],
-    spawners: [
-      // Open sea: distant galleons stay rare; wreckage/crate cadence relaxed.
-      { kind: 'fleet-silhouette', intervalMs: 8500, xRange: [100, WORLD_WIDTH - 100], y: 110, scaleRange: [0.9, 1.15], parallax: 0.25, depth: -78 },
-      { kind: 'wreckage',         intervalMs: 5500, xRange: [160, WORLD_WIDTH - 160], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.25], parallax: 1, depth: -66 },
-      { kind: 'debris-crate',     intervalMs: 5500, xRange: [120, WORLD_WIDTH - 120], y: -40, rotationRange: [0, Math.PI * 2], scaleRange: [0.7, 1.1], parallax: 1, depth: -67 },
-    ],
-  },
-};
+const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {};
 
 // Map EnvironmentSpec.biome (schema's wider union) onto the legacy WaterBiome
 // keys used by MANIFESTS. Defaults to 'sunlit' so unknown biomes still get a

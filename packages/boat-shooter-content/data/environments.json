@@ -10,10 +10,7 @@
       "fogOpacity": 0.0,
       "riverScrollSpeedMul": 1.0,
       "musicId": "rivermouth-theme",
-      "sceneryProps": [
-        "scenery-stone-marker",
-        "scenery-river-log"
-      ]
+      "sceneryProps": []
     },
     {
       "id": "env-inland-channels",
@@ -24,13 +21,7 @@
       "fogOpacity": 0.0,
       "riverScrollSpeedMul": 1.0,
       "musicId": "channels-theme",
-      "sceneryProps": [
-        "scenery-mangrove-bank",
-        "scenery-mangrove-root",
-        "scenery-dock-plank",
-        "scenery-debris-crate",
-        "scenery-grass-tuft"
-      ]
+      "sceneryProps": []
     },
     {
       "id": "env-delta-fleet",
@@ -41,12 +32,7 @@
       "fogOpacity": 0.0,
       "riverScrollSpeedMul": 1.0,
       "musicId": "delta-theme",
-      "sceneryProps": [
-        "scenery-fleet-silhouette",
-        "scenery-blockade-line",
-        "scenery-wreckage",
-        "scenery-debris-crate"
-      ]
+      "sceneryProps": []
     },
     {
       "id": "env-open-sea",
@@ -57,12 +43,7 @@
       "fogOpacity": 0.0,
       "riverScrollSpeedMul": 1.0,
       "musicId": "open-sea-theme",
-      "sceneryProps": [
-        "scenery-fleet-silhouette",
-        "scenery-blockade-line",
-        "scenery-wreckage",
-        "scenery-debris-crate"
-      ]
+      "sceneryProps": []
     },
     {
       "id": "env-cursed-bay",
