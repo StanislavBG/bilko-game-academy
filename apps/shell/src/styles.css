@@ -180,6 +180,7 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+
 /* Game canvas host — kept from original. */
 .game-canvas-host {
   position: fixed;

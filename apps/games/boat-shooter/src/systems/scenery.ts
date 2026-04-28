@@ -606,30 +606,14 @@ function bakeWreckage(scene: StageScene): void {
 
 const MANIFESTS: Partial<Record<WaterBiome, SceneryManifest>> = {
   rivermouth: {
-    // Visual relaxness pass: cut the bank-grass cadence by ~3×, drop the
-    // mid-stream grass duplicate, halve cattail/bullrush. Banks still read
-    // as banks; the play area gets quiet and dodge-friendly.
+    // Stage 1 — minimal. Water and ship are the visual focus. One static
+    // marker for orientation, one slow ambient drift. Everything else
+    // stripped (was 13 prop/spawner entries → 2).
     props: [
       { kind: 'stone-marker', x: WORLD_WIDTH / 2, y: 300, parallax: 1, depth: -65 },
-      { kind: 'mud-bar',      x: 240,             y: 620, parallax: 1, depth: -72, rotation: 0.2 },
-      { kind: 'mud-bar',      x: WORLD_WIDTH - 260, y: 980, parallax: 1, depth: -72, rotation: -0.3 },
     ],
     spawners: [
-      // Reed banks — both edges, slowed 450 → 1400 ms.
-      { kind: 'reed-clump', intervalMs: 1400, xRange: [10, 130],                       y: -180, rotationRange: [-0.15, 0.15], scaleRange: [0.75, 1.25], parallax: 1, depth: -68 },
-      { kind: 'reed-clump', intervalMs: 1400, xRange: [WORLD_WIDTH - 130, WORLD_WIDTH - 10], y: -180, rotationRange: [-0.15, 0.15], scaleRange: [0.75, 1.25], parallax: 1, depth: -68 },
-      // Lily pads mid-stream — calm, infrequent.
-      { kind: 'lily-leaf',  intervalMs: 3500, xRange: [220, WORLD_WIDTH - 220], y: -40, rotationRange: [0, Math.PI * 2], scaleRange: [0.7, 1.3], parallax: 1, depth: -70 },
-      // Drifting logs — rhythm beat.
-      { kind: 'river-log',  intervalMs: 6500, xRange: [120, WORLD_WIDTH - 120], y: -40, rotationRange: [-0.4, 0.4], scaleRange: [0.9, 1.2], parallax: 1, depth: -66 },
-      // Ambient fish — sparse, pure decoration.
-      { kind: 'fish-school',    intervalMs: 6000,  xRange: [200, WORLD_WIDTH - 200], y: -60, rotationRange: [-0.2, 0.2], scaleRange: [0.8, 1.2], parallax: 0.85, depth: -72 },
-      { kind: 'fish-large',     intervalMs: 12000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.3, 0.3], scaleRange: [0.85, 1.15], parallax: 0.9, depth: -71 },
-      { kind: 'fish-koi-trio',  intervalMs: 9000,  xRange: [WORLD_WIDTH - 280, WORLD_WIDTH - 140], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.8, 1.1], parallax: 0.85, depth: -73 },
-      // Wildlife — flagship moments, very infrequent.
-      { kind: 'water-pad',      intervalMs: 7000,  xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [0, Math.PI * 2], scaleRange: [0.85, 1.2], parallax: 1, depth: -69 },
-      { kind: 'turtle',         intervalMs: 14000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.1], parallax: 0.9, depth: -71 },
-      { kind: 'fish-bass-trio', intervalMs: 11000, xRange: [220, WORLD_WIDTH - 220], y: -60, rotationRange: [-0.4, 0.4], scaleRange: [0.85, 1.15], parallax: 0.85, depth: -73 },
+      { kind: 'river-log', intervalMs: 12000, xRange: [200, WORLD_WIDTH - 200], y: -40, rotationRange: [-0.4, 0.4], scaleRange: [0.9, 1.2], parallax: 1, depth: -66 },
     ],
   },
 

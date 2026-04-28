@@ -93,6 +93,17 @@ export function GaragePage(): JSX.Element {
   }
 
   const hasUnsaved = shipsDirty || abilityMapsDirty;
+  const dirtySectionCount = (shipsDirty ? 1 : 0) + (abilityMapsDirty ? 1 : 0);
+
+  function handleRevert(): void {
+    if (status.kind !== 'ready') return;
+    setShips(status.pack.ships);
+    setAbilityMaps(status.pack.abilityMaps);
+    setShipsDirty(false);
+    setAbilityMapsDirty(false);
+    setDirty({});
+    setSaveError(null);
+  }
 
   return (
     <PageShell
@@ -100,9 +111,11 @@ export function GaragePage(): JSX.Element {
       token={token}
       onTokenChange={handleTokenChange}
       hasUnsaved={hasUnsaved}
+      dirtySectionCount={dirtySectionCount}
       saving={saving}
       saveError={saveError}
       onSaveAll={() => void handleSaveAll()}
+      onRevert={handleRevert}
       flash={flash}
       body={
         <PageBody

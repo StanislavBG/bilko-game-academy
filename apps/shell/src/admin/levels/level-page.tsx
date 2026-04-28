@@ -117,15 +117,26 @@ export function LevelPage(): JSX.Element {
     }
   }
 
+  function handleRevert(): void {
+    if (status.kind !== 'ready') return;
+    setStages(status.pack.stages);
+    setEnvironments(status.pack.environments);
+    setStagesDirty(false);
+    setDirty({});
+    setSaveError(null);
+  }
+
   return (
     <PageShell
       title="Level Design — Boat Shooter"
       token={token}
       onTokenChange={handleTokenChange}
       hasUnsaved={stagesDirty}
+      dirtySectionCount={stagesDirty ? 1 : 0}
       saving={saving}
       saveError={saveError}
       onSaveAll={() => void handleSaveAll()}
+      onRevert={handleRevert}
       flash={flash}
       body={
         <PageBody

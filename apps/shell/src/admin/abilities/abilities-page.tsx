@@ -109,6 +109,17 @@ export function AbilitiesPage(): JSX.Element {
   }
 
   const hasUnsaved = weaponsDirty || passivesDirty;
+  const dirtySectionCount = (weaponsDirty ? 1 : 0) + (passivesDirty ? 1 : 0);
+
+  function handleRevert(): void {
+    if (status.kind !== 'ready') return;
+    setWeapons(status.pack.weapons);
+    setPassives(status.pack.passives);
+    setWeaponsDirty(false);
+    setPassivesDirty(false);
+    setDirty({});
+    setSaveError(null);
+  }
 
   return (
     <PageShell
@@ -116,9 +127,11 @@ export function AbilitiesPage(): JSX.Element {
       token={token}
       onTokenChange={handleTokenChange}
       hasUnsaved={hasUnsaved}
+      dirtySectionCount={dirtySectionCount}
       saving={saving}
       saveError={saveError}
       onSaveAll={() => void handleSaveAll()}
+      onRevert={handleRevert}
       flash={flash}
       body={
         <PageBody

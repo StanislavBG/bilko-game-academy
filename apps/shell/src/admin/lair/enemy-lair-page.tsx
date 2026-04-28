@@ -128,8 +128,19 @@ export function EnemyLairPage(): JSX.Element {
   }
 
   const hasUnsaved = enemiesDirty || abilityMapsDirty;
+  const dirtySectionCount = (enemiesDirty ? 1 : 0) + (abilityMapsDirty ? 1 : 0);
   const selectedAbilityMap =
     selected && abilityMaps ? findAbilityMap(abilityMaps, selected.id) : null;
+
+  function handleRevert(): void {
+    if (status.kind !== 'ready') return;
+    setEnemies(status.pack.enemies);
+    setAbilityMaps(status.pack.abilityMaps);
+    setEnemiesDirty(false);
+    setAbilityMapsDirty(false);
+    setDirty({});
+    setSaveError(null);
+  }
 
   return (
     <PageShell
@@ -137,9 +148,11 @@ export function EnemyLairPage(): JSX.Element {
       token={token}
       onTokenChange={handleTokenChange}
       hasUnsaved={hasUnsaved}
+      dirtySectionCount={dirtySectionCount}
       saving={saving}
       saveError={saveError}
       onSaveAll={() => void handleSaveAll()}
+      onRevert={handleRevert}
       flash={flash}
       body={
         <PageBody

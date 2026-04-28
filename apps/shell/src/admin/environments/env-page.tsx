@@ -114,15 +114,25 @@ export function EnvironmentsPage(): JSX.Element {
     }
   }
 
+  function handleRevert(): void {
+    if (status.kind !== 'ready') return;
+    setEnvironments(status.pack.environments);
+    setEnvsDirty(false);
+    setDirty({});
+    setSaveError(null);
+  }
+
   return (
     <PageShell
       title="Environments — Boat Shooter"
       token={token}
       onTokenChange={handleTokenChange}
       hasUnsaved={envsDirty}
+      dirtySectionCount={envsDirty ? 1 : 0}
       saving={saving}
       saveError={saveError}
       onSaveAll={() => void handleSaveAll()}
+      onRevert={handleRevert}
       flash={flash}
       body={
         <PageBody

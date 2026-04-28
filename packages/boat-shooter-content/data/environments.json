@@ -11,17 +11,8 @@
       "riverScrollSpeedMul": 1.0,
       "musicId": "rivermouth-theme",
       "sceneryProps": [
-        "scenery-reed-clump",
-        "scenery-lily-leaf",
-        "scenery-river-log",
-        "scenery-mud-bar",
         "scenery-stone-marker",
-        "scenery-water-pad",
-        "scenery-fish-school",
-        "scenery-fish-large",
-        "scenery-fish-koi-trio",
-        "scenery-fish-bass-trio",
-        "scenery-turtle"
+        "scenery-river-log"
       ]
     },
     {
