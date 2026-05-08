@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { GameContext, GameEvent, GameInstance, GameModule } from '@bilko/game-sdk';
+import type { GameContext, GameEvent, GameInstance, GameModule, LeaderboardAPI, LeaderboardEntry } from '@bilko/game-sdk';
 import { createEventBus } from '@bilko/game-sdk';
 import { createGameSave, createLocalLeaderboard, readonlySettings } from '@bilko/platform-core';
 import { AchievementToasts } from '../components/AchievementToast';
+
+const BILKO_HOST = 'https://bilko.run';
+
+// Mapping from local game achievement IDs to server registry keys.
+// Local IDs use kebab-case; server keys use snake_case.
+const ACHIEVEMENT_MAP: Record<string, string> = {
+  'first-blood': 'first_kill',
+};
 
 type Registry = Record<string, () => Promise<{ default: GameModule }>>;
 
@@ -12,6 +20,22 @@ type Registry = Record<string, () => Promise<{ default: GameModule }>>;
 const GAMES: Registry = {
   'boat-shooter': () => import('@bilko/boat-shooter'),
 };
+
+function createCloudLeaderboard(gameId: string, localBoard: LeaderboardAPI): LeaderboardAPI {
+  return {
+    async submit(entry: LeaderboardEntry): Promise<void> {
+      await localBoard.submit(entry);
+      // Fire-and-forget to cloud — don't block the game on network availability.
+      void fetch(`${BILKO_HOST}/api/games/${gameId}/scores`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ score: entry.score, mode: entry.board }),
+      }).catch(() => {/* silently ignore network errors */});
+    },
+    fetch: localBoard.fetch.bind(localBoard),
+  };
+}
 
 export function GameLauncher(): JSX.Element {
   const { gameId } = useParams<{ gameId: string }>();
@@ -31,6 +55,21 @@ export function GameLauncher(): JSX.Element {
     [eventBus],
   );
 
+  // Mirror achievement unlocks to the cloud. Maps local IDs → server keys.
+  useEffect(() => {
+    if (!gameId) return;
+    return eventBus.on('achievement', (evt: { type: 'achievement'; id: string }) => {
+      const serverKey = ACHIEVEMENT_MAP[evt.id];
+      if (!serverKey) return;
+      void fetch(`${BILKO_HOST}/api/games/${gameId}/unlock`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ key: serverKey }),
+      }).catch(() => {/* silently ignore network errors */});
+    });
+  }, [gameId, eventBus]);
+
   useEffect(() => {
     if (!gameId) return;
     const loader = GAMES[gameId];
@@ -46,6 +85,7 @@ export function GameLauncher(): JSX.Element {
         const mod = await loader();
         if (cancelled || !containerRef.current) return;
 
+        const local = createLocalLeaderboard(gameId, 'guest');
         const ctx: GameContext = {
           save: createGameSave(gameId),
           settings: readonlySettings(),
@@ -56,7 +96,7 @@ export function GameLauncher(): JSX.Element {
             boost: { kind: 'keyboard', keys: ['b'] },
             pause: { kind: 'keyboard', keys: ['Escape'] },
           },
-          leaderboard: createLocalLeaderboard(gameId, 'guest'),
+          leaderboard: createCloudLeaderboard(gameId, local),
           events: eventBus,
           pause: () => instanceRef.current?.pause(),
           resume: () => instanceRef.current?.resume(),

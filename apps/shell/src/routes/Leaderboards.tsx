@@ -3,13 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { createLocalLeaderboard } from '@bilko/platform-core';
 import type { LeaderboardRow } from '@bilko/game-sdk';
 
-type BoardTab = 'campaign' | 'per-stage' | 'boss' | 'weekly';
+const BILKO_HOST = 'https://bilko.run';
+
+type BoardTab = 'campaign' | 'per-stage' | 'boss' | 'weekly' | 'global';
 
 const TABS: { id: BoardTab; label: string; key: string }[] = [
   { id: 'campaign', label: 'Campaign (speedrun)', key: 'campaign-normal' },
   { id: 'per-stage', label: 'Per-stage high score', key: 'per-stage-normal' },
   { id: 'boss', label: 'Boss kill times', key: 'boss-kraken-normal' },
   { id: 'weekly', label: 'Weekly Challenge', key: 'weekly' },
+  { id: 'global', label: 'Global Top Scores', key: 'global' },
 ];
 
 // Mirrors apps/games/boat-shooter/src/weekly.ts — same algorithm so the
@@ -65,13 +68,40 @@ function currentWeekly(): { year: number; week: number; modifiers: ModifierId[] 
   return { year, week, modifiers: mods };
 }
 
+interface CloudScoreRow {
+  display_name: string;
+  score: number;
+  mode: string;
+  created_at: number;
+}
+
+function useCloudScores(range: 'today' | 'week' | 'all' = 'all', limit = 20): {
+  rows: CloudScoreRow[];
+  loading: boolean;
+} {
+  const [rows, setRows] = useState<CloudScoreRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ range, limit: String(limit) });
+    void fetch(`${BILKO_HOST}/api/games/boat-shooter/scores?${params}`)
+      .then((r) => r.ok ? r.json() as Promise<{ scores: CloudScoreRow[] }> : { scores: [] })
+      .then((j) => setRows(j.scores ?? []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [range, limit]);
+  return { rows, loading };
+}
+
 export function Leaderboards(): JSX.Element {
   const { t } = useTranslation();
   const [tab, setTab] = useState<BoardTab>('campaign');
   const [rows, setRows] = useState<readonly LeaderboardRow[]>([]);
   const weekly = useMemo(currentWeekly, []);
+  const { rows: cloudRows, loading: cloudLoading } = useCloudScores('all', 20);
 
   useEffect(() => {
+    if (tab === 'global') return;
     const board = TABS.find((b) => b.id === tab);
     if (!board) return;
     const lb = createLocalLeaderboard('boat-shooter', 'guest');
@@ -82,7 +112,7 @@ export function Leaderboards(): JSX.Element {
     <div className="p-6 md:p-10 max-w-3xl mx-auto">
       <h2 className="font-display text-3xl text-gold-400 mb-6">{t('nav.leaderboards')}</h2>
 
-      <div className="flex gap-2 border-b border-sea-700 mb-4">
+      <div className="flex gap-2 border-b border-sea-700 mb-4 flex-wrap">
         {TABS.map((b) => (
           <button
             key={b.id}
@@ -117,7 +147,9 @@ export function Leaderboards(): JSX.Element {
         </div>
       )}
 
-      {rows.length === 0 ? (
+      {tab === 'global' ? (
+        <GlobalTopScores rows={cloudRows} loading={cloudLoading} />
+      ) : rows.length === 0 ? (
         <div className="text-sea-400 text-sm italic py-8 text-center">
           No runs recorded yet. Play Boat Shooter to earn a spot.
         </div>
@@ -148,10 +180,37 @@ export function Leaderboards(): JSX.Element {
           ))}
         </ol>
       )}
-
-      <p className="mt-6 text-xs text-sea-500">
-        Local-only for now. Cloud sync + global ranking ships in P7.
-      </p>
     </div>
+  );
+}
+
+function GlobalTopScores({ rows, loading }: { rows: CloudScoreRow[]; loading: boolean }): JSX.Element {
+  if (loading) {
+    return <div className="text-sea-400 text-sm italic py-8 text-center">Loading…</div>;
+  }
+  if (rows.length === 0) {
+    return (
+      <div className="text-sea-400 text-sm italic py-8 text-center">
+        No global scores yet. Play and submit your run!
+      </div>
+    );
+  }
+  return (
+    <ol className="space-y-1.5">
+      {rows.map((r, i) => (
+        <li
+          key={i}
+          className="flex items-center justify-between bg-sea-900 rounded px-4 py-2.5"
+        >
+          <div className="flex items-center gap-4">
+            <span className="font-display text-2xl text-gold-400 w-8 tabular-nums">{i + 1}</span>
+            <span className="font-sans text-sea-100">{r.display_name}</span>
+          </div>
+          <div className="font-display text-xl text-gold-400 tabular-nums">
+            {r.score.toLocaleString()}
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
